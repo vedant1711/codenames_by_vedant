@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Codenames</title>
+<meta name="description" content="Play Codenames with friends in shared rooms. Classic and After Dark modes, 2 to 4 teams.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: horsepaste-style single column — mode + game bar, status bar, board (5x5 / 6x5 / 6x6), setup panels underneath. Deliberately one light theme. */
+:root {
+  --bg: #eceef1;
+  --surface: #ffffff;
+  --line: #cdd2d9;
+  --ink: #23262b;
+  --muted: #6a717c;
+  --red: #d2403e;    --red-ink: #c23431;    --red-soft: #fbe2e1;    --red-on: #ffffff;
+  --blue: #3a76d1;   --blue-ink: #2f65b8;   --blue-soft: #e1ebfa;   --blue-on: #ffffff;
+  --green: #2e9a5a;  --green-ink: #217f48;  --green-soft: #ddf2e5;  --green-on: #ffffff;
+  --yellow: #f0bf2a; --yellow-ink: #8f6a06; --yellow-soft: #fdf2cf; --yellow-on: #3a2e00;
+  --tan: #ddd0ae;    --tan-soft: #f4efe1;   --tan-ink: #4e4632;
+  --black: #2c2c2e;  --black-on: #ffffff;
+  --spice: #b3175a;
+  --classic: #2b6f77;
+  --accent: var(--classic);
+  --font-card: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+body.spicy { --accent: var(--spice); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 32px;
+}
+.stripe { height: 6px; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); background: var(--red); transition: background .25s; }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-top: 14px; }
+
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand h1 { margin: 0; font-family: var(--font-card); font-weight: 700; font-size: 28px; letter-spacing: .02em; text-transform: uppercase; }
+.brand .tag { font-family: var(--font-card); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 3px; padding: 1px 6px; transform: rotate(-3deg); display: inline-block; }
+.gameform { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.gameform label { font-size: 13px; color: var(--muted); }
+input[type=text] { font: inherit; font-size: 15px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); width: 170px; min-width: 0; }
+
+button { font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; }
+button:hover { border-color: #9aa2ad; }
+button:focus-visible, input:focus-visible, select:focus-visible, .card:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: .45; cursor: default; }
+.btn-primary { background: var(--ink); color: #ffffff; border-color: var(--ink); }
+.btn-primary:hover { border-color: var(--ink); background: #000000; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg button { border: 0; border-radius: 0; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed=true] { background: var(--ink); color: #ffffff; }
+#modeSeg button[aria-pressed=true] { background: var(--accent); }
+.dots { display: inline-flex; gap: 2px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+
+.status { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.score { font-family: var(--font-card); font-weight: 700; font-size: 30px; font-variant-numeric: tabular-nums; display: flex; gap: 8px; align-items: baseline; }
+.score .dash { color: var(--muted); font-size: 22px; }
+.score .sc { position: relative; }
+.score .sc.now::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; border-radius: 2px; background: currentColor; }
+.score .sc.out { opacity: .35; text-decoration: line-through; }
+.t-red { color: var(--red-ink); } .t-blue { color: var(--blue-ink); } .t-green { color: var(--green-ink); } .t-yellow { color: var(--yellow-ink); }
+.turn { font-family: var(--font-card); font-weight: 700; font-size: 24px; text-transform: uppercase; letter-spacing: .03em; }
+#endTurn[data-team=red] { background: var(--red); border-color: var(--red); color: var(--red-on); }
+#endTurn[data-team=blue] { background: var(--blue); border-color: var(--blue); color: var(--blue-on); }
+#endTurn[data-team=green] { background: var(--green); border-color: var(--green); color: var(--green-on); }
+#endTurn[data-team=yellow] { background: var(--yellow); border-color: var(--yellow); color: var(--yellow-on); }
+
+.board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.card {
+  position: relative; min-width: 0; aspect-ratio: 1.55; max-width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);
+  display: flex; align-items: center; justify-content: center; padding: 4px;
+  font-family: var(--font-card); font-weight: 700; text-transform: uppercase; letter-spacing: .02em;
+  color: var(--ink); cursor: pointer; text-align: center; line-height: 1.05;
+  transition: background .18s, color .18s, transform .1s;
+  --tc: var(--line); --ton: var(--ink); --tsoft: var(--surface); --tink: var(--ink);
+}
+.board.wide .card { aspect-ratio: 1.4; }
+.card:hover:not(.revealed) { transform: translateY(-1px); border-color: #9aa2ad; }
+.card .w { display: block; max-width: 100%; white-space: nowrap; transition: opacity .3s; }
+.card .w.two { white-space: normal; }
+.card[data-c=red]    { --tc: var(--red);    --ton: var(--red-on);    --tsoft: var(--red-soft);    --tink: var(--red-ink); }
+.card[data-c=blue]   { --tc: var(--blue);   --ton: var(--blue-on);   --tsoft: var(--blue-soft);   --tink: var(--blue-ink); }
+.card[data-c=green]  { --tc: var(--green);  --ton: var(--green-on);  --tsoft: var(--green-soft);  --tink: var(--green-ink); }
+.card[data-c=yellow] { --tc: var(--yellow); --ton: var(--yellow-on); --tsoft: var(--yellow-soft); --tink: var(--yellow-ink); }
+.card[data-c=neutral]  { --tc: var(--tan);   --ton: var(--tan-ink);  --tsoft: var(--tan-soft); --tink: var(--tan-ink); }
+.card[data-c=assassin] { --tc: var(--black); --ton: var(--black-on); --tsoft: var(--black); --tink: var(--black-on); }
+.card.revealed { cursor: default; border-color: transparent; box-shadow: none; background: var(--tc); color: var(--ton); }
+.card.revealed::after { content: ""; position: absolute; inset: 0; border-radius: 6px; background: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 6px, transparent 6px 12px); pointer-events: none; }
+
+/* Spymaster key */
+.spy .card { cursor: pointer; }
+.spy .card:not(.revealed)[data-c] { background: var(--tsoft); color: var(--tink); border: 2px solid var(--tc); }
+.spy .card.revealed, .spy .card.marked { opacity: .38; }
+.spy .card.revealed .w, .spy .card.marked .w { text-decoration: line-through; }
+
+/* Guess animations */
+@keyframes flipIn { 0% { transform: perspective(700px) rotateY(-95deg) scale(1.06); } 55% { transform: perspective(700px) rotateY(14deg) scale(1.06); } 100% { transform: perspective(700px) rotateY(0deg) scale(1); } }
+@keyframes glow { 0% { box-shadow: 0 0 0 0 var(--tc); } 100% { box-shadow: 0 0 0 18px rgba(255,255,255,0); } }
+@keyframes shake { 0%, 100% { translate: 0 0; } 15% { translate: -7px 0; } 30% { translate: 7px 0; } 45% { translate: -5px 0; } 60% { translate: 5px 0; } 75% { translate: -2px 0; } }
+@keyframes sag { 0%, 100% { translate: 0 0; } 40% { translate: 0 5px; } }
+@keyframes quake { 0%, 100% { translate: 0 0; } 10% { translate: -10px 4px; } 20% { translate: 9px -5px; } 30% { translate: -8px 3px; } 40% { translate: 7px -2px; } 55% { translate: -5px 2px; } 70% { translate: 3px -1px; } }
+@keyframes stamp { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-14deg) scale(2.6); } 22% { opacity: 1; transform: translate(-50%, -50%) rotate(-14deg) scale(.92); } 32% { transform: translate(-50%, -50%) rotate(-14deg) scale(1); } 78% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(-14deg) scale(1); } }
+@keyframes flash { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+.card.a-good { animation: flipIn .5s cubic-bezier(.2,.8,.3,1.2), glow .8s .35s ease-out; z-index: 2; }
+.card.a-bad { animation: flipIn .45s ease-out, shake .5s .42s; z-index: 2; }
+.card.a-neutral { animation: flipIn .45s ease-out, sag .4s .42s; }
+.card.a-boom { animation: flipIn .35s ease-out; z-index: 2; }
+.card.a-good > .w, .card.a-bad > .w, .card.a-neutral > .w, .card.a-boom > .w { opacity: .12; }
+.board.quake { animation: quake .6s; }
+.stamp { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-14deg); font-family: var(--font-card); font-weight: 700; font-size: clamp(11px, 2.2vw, 22px); letter-spacing: .06em; white-space: nowrap; border: 3px solid currentColor; border-radius: 4px; padding: 1px 7px; opacity: 0; animation: stamp 1.25s .3s ease-out forwards; pointer-events: none; z-index: 3; }
+#flash { position: fixed; inset: 0; pointer-events: none; z-index: 24; opacity: 0; box-shadow: inset 0 0 140px 40px var(--fc, var(--red)); }
+#flash.go { animation: flash .75s ease-out; }
+#flash.boom { background: rgba(0,0,0,.35); }
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 26; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.right { display: flex; gap: 8px; flex-wrap: wrap; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; max-width: 75ch; }
+
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+summary { cursor: pointer; padding: 12px 14px; font-weight: 600; }
+.panel { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 12px; }
+.setrow { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; min-width: 0; }
+.flabel, .field > label { font-weight: 600; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.stepper button { border: 0; border-radius: 0; padding: 7px 13px; font-size: 16px; }
+.stepper output { min-width: 34px; text-align: center; font-family: var(--font-card); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; border-left: 1px solid var(--line); border-right: 1px solid var(--line); padding: 4px 6px; }
+.packs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.pack { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 5px; padding: 10px; cursor: pointer; }
+.pack input { margin-top: 3px; accent-color: var(--accent); }
+.pack b { display: block; font-size: 14px; }
+.pack small { color: var(--muted); font-size: 12.5px; }
+.pack .heat { color: var(--accent); letter-spacing: .1em; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.toggle { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.toggle input { accent-color: var(--accent); }
+.rules { margin: 0; padding-left: 18px; line-height: 1.5; max-width: 65ch; font-size: 14px; }
+.rules li + li { margin-top: 4px; }
+.warn { color: var(--accent); font-size: 13px; margin: 0; }
+.linkrow { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; }
+.linkrow label { font-weight: 600; }
+.linkbox { display: flex; gap: 6px; min-width: 0; }
+.linkbox input { flex: 1; width: auto; min-width: 0; font-size: 13px; color: var(--muted); }
+select { font: inherit; font-size: 14px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--ink); max-width: 100%; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: var(--ink); color: #ffffff; padding: 10px 16px; border-radius: 6px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100% - 32px); text-align: center; z-index: 27; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.story { background: var(--spice); font-size: 16px; padding: 14px 18px; }
+
+.overlay { position: fixed; inset: 0; background: rgba(20,22,26,.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 30; }
+.modal { background: var(--surface); border-radius: 8px; padding: 22px; max-width: 380px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+.modal h2 { margin: 0; font-family: var(--font-card); font-size: 34px; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.modal p { margin: 0; color: var(--muted); }
+.modal .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+@media (max-width: 560px) {
+  .board { gap: 5px; }
+  .card, .board.wide .card { aspect-ratio: 1.1; border-radius: 5px; padding: 3px; }
+  .board.wide .card { aspect-ratio: .95; }
+  .brand h1 { font-size: 24px; }
+  .score { font-size: 26px; gap: 6px; }
+  .turn { font-size: 20px; }
+  input[type=text] { width: 130px; }
+  .stamp { border-width: 2px; padding: 0 4px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .stamp { display: none; } }
+/* ---------- page reset (no host wrapper on Vercel) ---------- */
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: max(32px, env(safe-area-inset-bottom, 0px)); }
+/* ---------- rooms ---------- */
+.brand h1 a { color: inherit; text-decoration: none; }
+#roomUI { display: flex; flex-direction: column; gap: 14px; }
+.lobby { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 28px 22px; display: flex; flex-direction: column; gap: 16px; max-width: 560px; width: 100%; margin: 28px auto 0; }
+.lobby h2 { margin: 0; font-family: var(--font-card); font-size: 34px; line-height: 1.05; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.lobby p { margin: 0; color: var(--muted); line-height: 1.5; }
+.btn-big { font-size: 16px; padding: 12px 18px; }
+.conn { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.conn i { width: 8px; height: 8px; border-radius: 50%; background: #c9a227; display: block; }
+.conn.live i { background: var(--green); }
+.conn.off i { background: var(--red); }
+.conn.local i { background: var(--blue); }
+.board .loading { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 0; margin: 0; font-size: 15px; }
+.dealrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+#deal.dirty { background: var(--accent); border-color: var(--accent); }
+</style>
+<script src="firebase-config.js"></script>
+</head>
+<body>
+<div class="stripe" id="stripe"></div>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1><a href="#" id="home">Codenames</a></h1><span class="tag" id="modeTag">Classic</span></div>
+    <form class="gameform" id="roomForm" autocomplete="off" hidden>
+      <label for="roomName">Room</label>
+      <input type="text" id="roomName" spellcheck="false">
+      <button type="submit">Go</button>
+      <button type="button" class="btn-primary" id="newGame">Next game</button>
+    </form>
+    <span class="conn" id="conn"><i></i><span id="connText">Connecting…</span></span>
+  </header>
+
+  <section class="lobby" id="lobby" hidden>
+    <h2>Play Codenames with friends</h2>
+    <p>Create a room and share its link. Everyone plays on their own phone, or you can put the board on a TV and pass a phone around.</p>
+    <div class="field">
+      <span class="flabel" id="lobbyModeLbl">Mode for a new room</span>
+      <div class="seg" role="group" aria-labelledby="lobbyModeLbl" id="lobbyMode">
+        <button type="button" data-mode="general" aria-pressed="true">Classic</button>
+        <button type="button" data-mode="spicy" aria-pressed="false">After Dark</button>
+      </div>
+    </div>
+    <button type="button" class="btn-primary btn-big" id="createRoom">Create a room</button>
+    <form id="joinForm" class="linkrow" autocomplete="off">
+      <label for="joinCode">Joining a friend's room? Enter the room name</label>
+      <div class="linkbox"><input type="text" id="joinCode" placeholder="brave-otter-42" spellcheck="false"><button type="submit">Join</button></div>
+    </form>
+  </section>
+
+  <div id="roomUI" hidden>
+    <div class="status">
+      <div class="score" id="score" aria-label="Words left per team"></div>
+      <div class="turn" id="turnText"></div>
+      <button id="endTurn" type="button">End turn</button>
+    </div>
+
+    <div class="board" id="board" aria-label="Codenames board"></div>
+
+    <div class="controls">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="viewPlayer" aria-pressed="true">Player</button>
+        <button type="button" id="viewSpy" aria-pressed="false">Spymaster</button>
+      </div>
+      <div class="right">
+        <button type="button" id="undo" disabled>Undo</button>
+      </div>
+    </div>
+    <p class="hint" id="hint"></p>
+
+    <details id="invite" open>
+      <summary>Invite friends</summary>
+      <div class="panel">
+        <div class="linkrow">
+          <label for="roomLink">Room link</label>
+          <div class="linkbox"><input type="text" id="roomLink" readonly><button type="button" id="copyRoom">Copy</button></div>
+        </div>
+        <p class="hint">Everyone opens this link and picks Player or Spymaster on their own device. Guesses, turns and new boards show up for the whole room instantly.</p>
+      </div>
+    </details>
+
+    <details id="setup">
+      <summary>Game setup</summary>
+      <div class="panel">
+        <div class="setrow">
+          <div class="field">
+            <span class="flabel" id="modeLbl">Mode</span>
+            <div class="seg" role="group" aria-labelledby="modeLbl" id="modeSeg">
+              <button type="button" data-mode="general" aria-pressed="true">Classic</button>
+              <button type="button" data-mode="spicy" aria-pressed="false">After Dark</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="flabel" id="teamsLbl">Teams</span>
+            <div class="seg" role="group" aria-labelledby="teamsLbl" id="teamsSeg">
+              <button type="button" data-teams="2" aria-pressed="true"><span class="dots"><i style="background:var(--red)"></i><i style="background:var(--blue)"></i></span>2</button>
+              <button type="button" data-teams="3" aria-pressed="false"><span class="dots"><i style="background:var(--red)"></i><i style="background:var(--blue)"></i><i style="background:var(--green)"></i></span>3</button>
+              <button type="button" data-teams="4" aria-pressed="false"><span class="dots"><i style="background:var(--red)"></i><i style="background:var(--blue)"></i><i style="background:var(--green)"></i><i style="background:var(--yellow)"></i></span>4</button>
+            </div>
+          </div>
+          <div class="field">
+            <span class="flabel" id="assLbl">Black tiles</span>
+            <div class="stepper" role="group" aria-labelledby="assLbl">
+              <button type="button" id="assMinus" aria-label="Fewer black tiles">&minus;</button>
+              <output id="assOut" aria-live="polite">1</output>
+              <button type="button" id="assPlus" aria-label="More black tiles">+</button>
+            </div>
+          </div>
+          <div class="field" id="mixField">
+            <label for="mix">Board mix</label>
+            <select id="mix"></select>
+          </div>
+        </div>
+        <p class="hint" id="layoutLine"></p>
+        <div class="packs" id="packs"></div>
+        <p class="hint" id="balanceLine"></p>
+        <div class="dealrow">
+          <button type="button" class="btn-primary" id="deal">Deal a new board</button>
+          <span class="hint">This changes the board for everyone in the room.</span>
+        </div>
+        <div id="spicyOpts" class="panel" style="padding:0">
+          <label class="toggle"><input type="checkbox" id="penalties" checked> Party penalties (drink prompts when someone messes up)</label>
+          <label class="toggle"><input type="checkbox" id="stories" checked> Story time (revealing a Confessions word means tell the story or drink)</label>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>How to play</summary>
+      <div class="panel">
+        <ol class="rules">
+          <li>Split into 2, 3 or 4 teams. Each team picks a spymaster, who switches to Spymaster view on their phone.</li>
+          <li>On your turn, your spymaster gives a one-word clue and a number, like "Ocean, 2". Anyone on the team taps the guesses.</li>
+          <li>Hit your own color and keep guessing (up to the number plus one). Tan is a bystander and ends your turn. Another team's color ends your turn and helps that team.</li>
+          <li>Black tiles are assassins. With 2 teams, touching one loses the game on the spot. With 3 or 4 teams, that team is knocked out and the rest play on. The last team standing wins.</li>
+          <li>The starting team has one extra word, and the starting team rotates every game so everyone gets a turn going first. Board size grows with teams: 5×5 for 2, 6×5 for 3, 6×6 for 4.</li>
+          <li>After Dark only: when a Confessions word like "Worst Date" or "Drunk Text" is revealed, the person who tapped it tells their real story about it, or drinks.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="flash" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <h2 id="winTitle">Red wins</h2>
+    <p id="winText"></p>
+    <div class="row">
+      <button type="button" id="showBoard">See the board</button>
+      <button type="button" class="btn-primary" id="winNext">Next game</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const FIREBASE_SDK = "10.12.2";
+
+// ======================= AFTER DARK (spicy) words =======================
+const WORDS = {
+  mild: ["Kiss","Wink","Blush","Crush","Date","Flirt","Tease","Cuddle","Spoon","Hickey","Lipstick","Perfume","Candle","Roses","Champagne","Strawberry","Chocolate","Honey","Cherry","Peach","Banana","Eggplant","Whipped Cream","Massage","Bubble Bath","Tequila","Shot","Hangover","Bartender","Club","Vegas","Hot Tub","Truth","Dare","Bottle","Spin","Afterparty","Bachelor","Bachelorette","Honeymoon","Ex","Tinder","Swipe","Ghost","Sugar Daddy","Cougar","Silver Fox","Hottie","Stud","Babe","Valentine","Cupid","Love Bite","Pillow Talk","Slow Dance","Mistletoe","Body Shot","Margarita","Mojito","Wine","Oysters","Aphrodisiac","Lingerie","Robe","Towel","Pajamas","Silk","Lace","Heels","Mirror","Selfie","Sauna","Beach","Balcony","Motel","Backseat","Elevator","Hotel Room","Bikini","Speedo","Tan Lines","Abs","Dimples","Curves","Lips","Neck","Ice Cube","Popsicle","Lollipop","Cucumber","Melon","Hot Dog","Taco","Sausage","Buns","Nuts","Wedding Night","Serenade","Sangria","Sunscreen",
+    "Cologne","Beard","Stubble","Tuxedo","Suit and Tie","Forearms","Gray Sweatpants","Wingman","Bromance","Man Bun","Dad Bod","Jawline","Biceps","Six-Pack","Pool Boy","Personal Trainer","Lumberjack","Mechanic","Frat Boy","Gym Bro","Boy Toy","Himbo","Kilt","Fireman","Bad Boy","Nice Guy","Cufflinks","Aftershave"],
+  hot: ["Stripper","Pole","Lap Dance","Skinny Dip","Walk of Shame","Booty Call","Thong","Bra","Garter","Corset","Stockings","Boots","Leather","Latex","Nurse","Maid","Cowboy","Firefighter","Pirate","Cop","Booty","Tongue","Thigh","Nipple","Moan","Spank","Bite","Lick","Strip","Grind","Quickie","Foreplay","Twerk","Shower","Kitchen Table","Mile High","Bedroom","Strip Poker","Make Out","Dirty Talk","Sexting","Nudes","Hookup","Rebound","Morning After","Bed Sheets","Handcuffs","Blindfold","Feather","Rope","Massage Oil","Edible Undies","Body Paint","Hot Wax","Naughty","Frisky","Horny","Turn On","Headboard","Squeaky Bed","Neighbors","Peep Show","Burlesque","Pasties","Tassels","G-String","Commando","Cleavage","Bulge","Package","Juicy","Sweaty","Steamy","One Night Stand","Seven Minutes","Hall Pass","Afterglow","Skinny Jeans","Boxers","Briefs","Panties","Undress","Spoon Me","Love Seat","Waterbed","Jacuzzi","Back Rub",
+    "Jockstrap","Tighty Whities","Banana Hammock","Mankini","Boxer Briefs","Chest Hair","V-Line","Shirtless","Male Stripper","Thrust","Hip Thrust","Daddy","Zaddy","Manscaping","Hard-On","Stamina","Sausage Fest","Construction Worker","Plumber","Bodybuilder","Oiled Up","Bachelor Party","Gigolo"],
+  wild: ["Whip","Paddle","Collar","Leash","Ball Gag","Toy","Vibrator","Lube","Condom","Safe Word","Dungeon","Fantasy","Kink","Fetish","Roleplay","Threesome","Climax","Orgasm","Position","Missionary","Doggy Style","Reverse Cowgirl","Sixty-Nine","Dominatrix","Submissive","Bondage","Swinger","Orgy","Voyeur","Exhibitionist","Nipple Clamps","Strap-On","Dildo","Butt Plug","Kama Sutra","G-Spot","Foot Fetish","Sex Swing","Love Hotel","Red Room","Fifty Shades","Porn","OnlyFans","Cam Girl","Sugar Baby","Open Relationship","Deep Throat","Morning Wood","Blue Balls","Edging","Pegging","Tantric","Aftercare","Riding Crop","Chastity","Spit","Swallow","Size Queen","Quickie Car","Booty Shake",
+    "Cock Ring","Prostate","Fleshlight","Blue Pill","Viagra","Premature","Erection","Balls","Male Escort","Daddy Kink","Cuckold","Pup Play","Bear","Sub","Dom","Golden Shower","Glory Hole","Circle Jerk"],
+  confess: ["First Kiss","First Time","Worst Date","Drunk Text","Caught in the Act","Celebrity Crush","Secret Crush","Bad Breakup","Friend's Ex","Teacher Crush","Blackout","Lost Phone","Wrong Number","Sneaking Out","Parents Walked In","Roommate","Fake Name","Fake ID","Catfish","Ghosted","Left on Read","Dating App","Blind Date","Vacation Fling","Spring Break","Prom Night","Dorm Room","Office Romance","Coworker","Boss","Cheated","Two-Timing","Bi-Curious","Never Have I Ever","Body Count","Most Embarrassing","Regret","Bad Tattoo","Nude Beach","Strip Club","Wedding Hookup","Bar Bathroom","Uber Ride","Text from Ex","Screenshot","Group Chat","Exposed","Love Letter","Jealous","Stalked an Ex","Kissed a Stranger","Crush on a Friend","Friends with Benefits","Dared To","Got Caught","Back Door Exit","Bad Kisser","Awkward Morning","Fake Orgasm","Hall Pass List","Older Lover","Younger Lover","Long Distance","Situationship"],
+  // everyday words mixed into After Dark boards (many with double meanings)
+  classic: ["Snake","Lock","Key","Box","Wood","Rod","Ball","Bush","Beaver","Tree","Bank","Moon","Star","Rocket","Tower","Pipe","Hose","Drill","Hammer","Screw","Nail","Plug","Pump","Horn","Trumpet","Flute","Organ","Joystick","Remote","Saddle","Stallion","Pony","Kitten","Tiger","Bunny","Python","Eel","Clam","Muffin","Cake","Jam","Pie","Cookie","Donut","Sprinkles","Gravy","Butter","Pickle","Corn","Carrot","Zucchini","Coconut","Fig","Plum","Squash","Lemon","Church","Doctor","Teacher","Office","Desk","Library","Gym","Yoga","Pool","Ladder","Train","Tunnel","Cave","Volcano","Fountain","Geyser","Hurricane","Lightning","Thunder","Storm","Fire","Diamond","Ring","Crown","Throne","King","Queen","Knight","Castle","Pearl","Necklace","Gloves","Mask","Wand","Magic","Bell","Whistle","Drum","Guitar","Piano","Camera","Phone","Tent","Fishing","Worm","Bait","Hook","Reel","Net","Anchor","Ship","Cherry Pie","Rooster",
+    "Pencil","Clock","Bridge","Map","Robot","Dragon","Satellite","Mountain","River","Island","Desert","Jungle","Penguin","Shark","Dinosaur","Alien","Ninja","Spy","Detective","Scientist","Astronaut","Wizard","Vampire","Zombie","Mummy","Casino","Lottery","Passport","Suitcase","Bicycle","Helicopter","Submarine","Telescope","Battery","Laser","Shadow","Pyramid","Olympics","Football","Golf","Tennis","Chess","Puzzle","Balloon","Snowman","Pumpkin","Pizza","Hospital","Jail","Circus","Clown","Ticket","Bomb","Bat","Compass","Glass","Cloud","Iron","Paper","Spider","Ice Cream"]
+};
+const PACKS_S = [
+  { id: "mild", code: "m", name: "Flirty", heat: "Mild", desc: "Dates, drinks, food with a wink" },
+  { id: "hot", code: "h", name: "Steamy", heat: "Hot", desc: "Lingerie, bodies, bedroom antics" },
+  { id: "wild", code: "w", name: "Kinky", heat: "Wild", desc: "Toys, positions, the full dungeon" },
+  { id: "confess", code: "c", name: "Confessions", heat: "Story time", desc: "Words that drag secrets and stories out of your friends" }
+];
+const MIXES = [
+  { n: 25, label: "All spicy (hardest)" },
+  { n: 17, label: "Mostly spicy: about 2/3 spicy, 1/3 everyday" },
+  { n: 13, label: "Half and half" }
+];
+
+// ======================= CLASSIC (general) words =======================
+const GENERAL = {
+  everyday: {
+    home: ["Chair","Table","Lamp","Window","Door","Key","Lock","Bed","Pillow","Blanket","Sofa","Carpet","Ladder","Bucket","Broom","Sink","Oven","Fridge","Kettle","Clock","Candle","Curtain","Stairs","Roof","Chimney","Garage","Fence","Mailbox","Basket","Bathtub"],
+    objects: ["Pen","Pencil","Paper","Book","Envelope","Stamp","Ring","Watch","Wallet","Umbrella","Glasses","Bottle","Cup","Plate","Fork","Knife","Needle","Button","Zipper","Rope","Chain","Magnet","Battery","Balloon","Kite","Brush","Comb","Soap","Scissors","Glue","Box","Bag","Map","Mirror","Coin"],
+    food: ["Apple","Banana","Orange","Lemon","Grape","Cherry","Peach","Pear","Melon","Carrot","Potato","Onion","Garlic","Corn","Bean","Bread","Cheese","Butter","Egg","Honey","Pie","Cake","Cookie","Pizza","Burger","Taco","Noodle","Rice","Soup","Pepper","Salt","Sugar","Chocolate","Coffee","Tea","Milk"],
+    jobs: ["Doctor","Nurse","Teacher","Pilot","Chef","Farmer","Lawyer","Judge","Police","Soldier","Sailor","Captain","Painter","Singer","Dancer","Actor","Banker","Plumber","Mechanic","Baker","Butcher","Barber","Waiter","Driver","Miner","Spy","Detective","Scientist","Astronaut","Firefighter"],
+    clothes: ["Hat","Crown","Boot","Shoe","Sock","Glove","Scarf","Belt","Tie","Jacket","Coat","Dress","Shirt","Skirt","Mask","Helmet","Cape","Apron","Pocket","Collar","Uniform","Pajamas","Sweater","Sandal"]
+  },
+  world: {
+    places: ["School","Hospital","Church","Library","Museum","Bank","Hotel","Airport","Station","Prison","Castle","Palace","Tower","Bridge","Tunnel","Market","Factory","Farm","Stadium","Theater","Cinema","Zoo","Park","Harbor","Lighthouse","Temple","Pyramid","Embassy","Casino","Restaurant"],
+    geography: ["Paris","London","Rome","Tokyo","Egypt","China","India","Brazil","Mexico","Canada","Africa","Europe","Atlantic","Pacific","Amazon","Nile","Sahara","Alps","Everest","Hollywood","Vegas","Moscow","Berlin","Sydney","Hawaii","Alaska","Texas","Venice","Athens","Antarctica"],
+    nature: ["Mountain","River","Ocean","Lake","Island","Desert","Forest","Jungle","Volcano","Cave","Cliff","Beach","Valley","Glacier","Waterfall","Storm","Thunder","Lightning","Rain","Snow","Ice","Fire","Wind","Cloud","Rainbow","Sun","Tree","Flower","Rose","Grass","Leaf","Root","Seed","Stone"],
+    animals: ["Dog","Cat","Horse","Cow","Pig","Sheep","Goat","Chicken","Duck","Eagle","Owl","Parrot","Penguin","Swan","Lion","Tiger","Bear","Wolf","Fox","Rabbit","Mouse","Bat","Monkey","Gorilla","Elephant","Giraffe","Zebra","Camel","Kangaroo","Whale","Shark","Dolphin","Octopus","Crab","Snake","Frog","Turtle","Spider","Bee","Ant","Butterfly"],
+    history: ["King","Queen","Prince","Knight","Pirate","Viking","Ninja","Samurai","Cowboy","Pharaoh","Emperor","Empire","Army","Navy","War","Treaty","Revolution","Gladiator","Sword","Shield","Arrow","Bow","Cannon","Flag","Throne","Tomb","Mummy"]
+  },
+  science: {
+    science: ["Atom","Cell","Gene","Virus","Germ","Brain","Heart","Bone","Blood","Lung","Skeleton","Microscope","Gravity","Energy","Oxygen","Carbon","Gold","Silver","Iron","Copper","Diamond","Crystal","Acid","Plastic","Fossil","Dinosaur","Volt","Lab","Formula","Experiment"],
+    space: ["Moon","Star","Rocket","Planet","Comet","Galaxy","Orbit","Satellite","Asteroid","Mars","Jupiter","Saturn","Eclipse","Telescope","Alien","Meteor","Nebula","Spaceship","Black Hole","Shuttle","Cosmos","Launch","Crater","UFO"],
+    tech: ["Computer","Robot","Laser","Phone","Camera","Radio","Television","Internet","Email","Password","Keyboard","Screen","Cable","Chip","Code","Server","Engine","Motor","Wheel","Gear","Drill","Hammer","Saw","Screw","Nail","Bolt","Drone","Tablet","Printer","Speaker","Microphone","Headphones","Remote","Bulb","Plug"],
+    transport: ["Car","Bus","Train","Truck","Taxi","Bicycle","Motorcycle","Plane","Helicopter","Jet","Boat","Ship","Submarine","Yacht","Canoe","Tractor","Ambulance","Tank","Subway","Elevator","Skateboard","Sled","Parachute","Anchor","Tire","Brake","Fuel","Passport"]
+  },
+  fun: {
+    fantasy: ["Dragon","Unicorn","Wizard","Witch","Ghost","Vampire","Zombie","Werewolf","Giant","Dwarf","Elf","Fairy","Mermaid","Troll","Goblin","Phoenix","Angel","Devil","Genie","Monster","Wand","Potion","Spell","Curse","Magic","Cauldron","Treasure","Oracle","Titan","Hydra","Centaur"],
+    showbiz: ["Movie","Circus","Clown","Magician","Juggler","Puppet","Comic","Cartoon","Hero","Villain","Party","Concert","Opera","Ballet","Ticket","Award","Trophy","Medal","Stage","Costume","Director","Studio","Popcorn","Red Carpet","Premiere","Sequel","Celebrity","Fan"],
+    sports: ["Football","Soccer","Baseball","Basketball","Tennis","Golf","Boxing","Hockey","Chess","Poker","Dice","Card","Puzzle","Lottery","Marathon","Olympics","Goal","Net","Racket","Ball","Referee","Coach","Team","Skate","Surf","Ski","Dart","Bowling","Karate","Wrestling"],
+    music: ["Piano","Guitar","Drum","Violin","Trumpet","Flute","Harp","Bell","Whistle","Horn","Organ","Band","Choir","Song","Note","Rhythm","Jazz","Rock","Disco","Banjo","Cello","Saxophone","Tuba","Lullaby","Anthem","Melody","DJ","Karaoke"]
+  }
+};
+const PACKS_G = [
+  { id: "everyday", code: "e", name: "Everyday", heat: "Core", desc: "Home, objects, food, jobs, clothes" },
+  { id: "world", code: "o", name: "World", heat: "Core", desc: "Places, cities, nature, animals, history" },
+  { id: "science", code: "s", name: "Science & Tech", heat: "Brainy", desc: "Space, gadgets, machines, vehicles" },
+  { id: "fun", code: "f", name: "Fantasy & Fun", heat: "Playful", desc: "Myths, monsters, showbiz, sports, music" }
+];
+const WORDS_G = {}, CLUSTER_G = {};
+PACKS_G.forEach(p => {
+  WORDS_G[p.id] = [];
+  Object.keys(GENERAL[p.id]).forEach(cat => GENERAL[p.id][cat].forEach(w => { if (!CLUSTER_G[w]) CLUSTER_G[w] = cat; WORDS_G[p.id].push(w); }));
+});
+
+// ---------- After Dark theme groups: a board gets at most 2 words per group ----------
+const GROUPS = {
+  vibe: ["Naughty","Frisky","Horny","Turn On","Juicy","Sweaty","Steamy","Fantasy","Kink","Fetish","Aphrodisiac","Afterglow","Regret","Jealous","Most Embarrassing","Roleplay"],
+  drinks: ["Champagne","Tequila","Shot","Margarita","Mojito","Wine","Sangria","Body Shot","Bottle","Bartender","Hangover","Blackout","Drunk Text","Glass"],
+  fruitveg: ["Strawberry","Cherry","Peach","Banana","Eggplant","Cucumber","Melon","Corn","Carrot","Zucchini","Coconut","Fig","Plum","Squash","Lemon","Pickle","Pumpkin"],
+  sweets: ["Chocolate","Honey","Whipped Cream","Popsicle","Lollipop","Muffin","Cake","Jam","Pie","Cookie","Donut","Sprinkles","Butter","Gravy","Cherry Pie","Ice Cube","Ice Cream","Pizza"],
+  meat: ["Hot Dog","Taco","Sausage","Buns","Nuts","Oysters","Clam","Sausage Fest","Balls"],
+  underwear: ["Lingerie","Thong","Bra","Garter","Corset","Stockings","G-String","Panties","Boxers","Briefs","Boxer Briefs","Tighty Whities","Jockstrap","Banana Hammock","Mankini","Edible Undies","Commando","Pasties","Tassels","Speedo","Bikini","Tan Lines"],
+  outfits: ["Robe","Towel","Pajamas","Silk","Lace","Heels","Boots","Leather","Latex","Tuxedo","Suit and Tie","Gray Sweatpants","Kilt","Cufflinks","Skinny Jeans","Gloves","Mask","Shirtless"],
+  roles: ["Nurse","Maid","Cowboy","Firefighter","Fireman","Pirate","Cop","Pool Boy","Personal Trainer","Lumberjack","Mechanic","Construction Worker","Plumber","Bodybuilder","Doctor","Teacher","Boss","Coworker","Knight","Detective","Scientist","Astronaut"],
+  body: ["Booty","Tongue","Thigh","Nipple","Lips","Neck","Abs","Six-Pack","Biceps","Forearms","Jawline","Curves","Dimples","Cleavage","Bulge","Package","Chest Hair","V-Line","Beard","Stubble","Man Bun","Dad Bod","Prostate","G-Spot","Erection","Hard-On","Morning Wood","Blue Balls","Manscaping"],
+  touch: ["Kiss","Lick","Bite","Moan","Spank","Grind","Twerk","Thrust","Hip Thrust","Strip","Undress","Make Out","Cuddle","Spoon","Spoon Me","Massage","Back Rub","Tease","Flirt","Wink","Blush","Hickey","Love Bite","Deep Throat","Spit","Swallow","First Kiss","Bad Kisser","Kissed a Stranger","Dirty Talk","Booty Shake","Oiled Up"],
+  sex: ["Quickie","Quickie Car","Foreplay","Climax","Orgasm","Position","Missionary","Doggy Style","Reverse Cowgirl","Sixty-Nine","Kama Sutra","Tantric","Edging","Pegging","Threesome","Orgy","Premature","Stamina","Fake Orgasm","Circle Jerk","Golden Shower","Glory Hole","First Time","Body Count"],
+  toys: ["Handcuffs","Blindfold","Feather","Rope","Whip","Paddle","Collar","Leash","Ball Gag","Toy","Vibrator","Dildo","Butt Plug","Strap-On","Nipple Clamps","Cock Ring","Fleshlight","Riding Crop","Sex Swing","Chastity","Hot Wax","Massage Oil","Lube","Condom","Blue Pill","Viagra","Body Paint"],
+  bdsm: ["Bondage","Dominatrix","Submissive","Sub","Dom","Safe Word","Dungeon","Red Room","Fifty Shades","Aftercare","Daddy Kink","Pup Play","Cuckold","Foot Fetish"],
+  bed: ["Bedroom","Bed Sheets","Headboard","Squeaky Bed","Waterbed","Love Seat","Kitchen Table","Shower","Bubble Bath","Hot Tub","Jacuzzi","Sauna","Candle","Dorm Room","Hotel Room","Motel","Love Hotel","Pillow Talk","Tent"],
+  out: ["Backseat","Elevator","Balcony","Beach","Nude Beach","Skinny Dip","Mile High","Vegas","Club","Strip Club","Bar Bathroom","Uber Ride","Office","Library","Gym","Pool","Casino","Sunscreen"],
+  dating: ["Date","Crush","Blind Date","Dating App","Tinder","Swipe","Ghost","Ghosted","Left on Read","Catfish","Ex","Text from Ex","Rebound","Bad Breakup","Hookup","One Night Stand","Booty Call","Friends with Benefits","Situationship","Long Distance","Vacation Fling","Office Romance","Open Relationship","Hall Pass","Hall Pass List","Cheated","Two-Timing","Secret Crush","Celebrity Crush","Crush on a Friend","Friend's Ex","Teacher Crush","Stalked an Ex","Worst Date"],
+  people: ["Sugar Daddy","Sugar Baby","Cougar","Silver Fox","Hottie","Stud","Babe","Daddy","Zaddy","Himbo","Boy Toy","Frat Boy","Gym Bro","Bad Boy","Nice Guy","Wingman","Bromance","Gigolo","Male Escort","Cam Girl","Swinger","Voyeur","Exhibitionist","Bear","Size Queen","Older Lover","Younger Lover","Roommate","Neighbors","Bi-Curious"],
+  party: ["Truth","Dare","Spin","Afterparty","Bachelor","Bachelorette","Bachelor Party","Never Have I Ever","Strip Poker","Seven Minutes","Dared To","Spring Break","Prom Night","Peep Show","Burlesque","Male Stripper","Stripper","Pole","Lap Dance","Fake ID","Fake Name"],
+  romance: ["Roses","Valentine","Cupid","Mistletoe","Serenade","Slow Dance","Love Letter","Honeymoon","Wedding Night","Wedding Hookup","Perfume","Cologne","Aftershave","Lipstick","Ring","Diamond"],
+  caught: ["Caught in the Act","Got Caught","Parents Walked In","Walk of Shame","Sneaking Out","Back Door Exit","Exposed","Screenshot","Group Chat","Lost Phone","Wrong Number","Awkward Morning","Morning After","Bad Tattoo"],
+  digital: ["Sexting","Nudes","Selfie","Porn","OnlyFans","Mirror","Phone","Camera","Remote"],
+  animals: ["Snake","Python","Eel","Beaver","Stallion","Pony","Kitten","Tiger","Bunny","Rooster","Worm","Penguin","Shark","Spider","Bat"],
+  tools: ["Drill","Hammer","Screw","Nail","Plug","Pump","Hose","Pipe","Rod","Ladder","Key","Lock","Box","Joystick","Battery","Iron"],
+  music: ["Horn","Trumpet","Flute","Organ","Bell","Whistle","Drum","Guitar","Piano"],
+  nature: ["Volcano","Geyser","Fountain","Hurricane","Lightning","Thunder","Storm","Fire","Tree","Bush","Wood","Cave","Tunnel","Mountain","River","Island","Desert","Jungle","Cloud"],
+  space: ["Moon","Star","Rocket","Satellite","Telescope","Alien","Laser"],
+  royal: ["Crown","Throne","King","Queen","Castle","Pearl","Necklace"],
+  fishing: ["Fishing","Bait","Hook","Reel","Net","Anchor","Ship","Submarine"],
+  monsters: ["Dragon","Vampire","Zombie","Mummy","Wizard","Wand","Magic","Clown","Circus"],
+  sport: ["Football","Golf","Tennis","Olympics","Chess","Ball","Yoga","Bicycle","Saddle"]
+};
+const CLUSTER_S = {};
+Object.keys(GROUPS).forEach(g => GROUPS[g].forEach(w => { if (!CLUSTER_S[w]) CLUSTER_S[w] = g; }));
+const capS = g => (g === "vibe" ? 1 : 2);
+const capG = () => 3;
+const STOPWORDS = new Set(["the", "and", "with", "from", "for", "act", "out", "off", "list"]);
+function tokens(w) {
+  return w.toLowerCase().split(/[^a-z]+/).filter(t => t.length >= 2 && !STOPWORDS.has(t))
+    .map(t => (t.length > 3 && /[^s]s$/.test(t) ? t.slice(0, -1) : t));
+}
+
+const TEAMS = ["red", "blue", "green", "yellow"];
+const LAYOUTS = { 2: { size: 25, cols: 5, start: 9, other: 8 }, 3: { size: 30, cols: 6, start: 8, other: 7 }, 4: { size: 36, cols: 6, start: 8, other: 7 } };
+const MAX_ASSASSINS = 5;
+const STORY = new Set(WORDS.confess);
+
+// ---------- random helpers ----------
+function rngFrom(seed) {
+  let a = seed;
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rng) {
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+const rid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+// ---------- device storage (per-device conveniences only) ----------
+function load(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} }
+
+// ---------- settings ----------
+function sanitize(p) {
+  p = p || {};
+  const arr = a => (Array.isArray(a) ? a : (a && typeof a === "object" ? Object.values(a) : []));
+  const out = {
+    mode: p.mode === "spicy" ? "spicy" : "general",
+    packsS: arr(p.packsS).filter(id => PACKS_S.some(x => x.id === id)),
+    packsG: arr(p.packsG).filter(id => PACKS_G.some(x => x.id === id)),
+    mix: MIXES.some(m => m.n === p.mix) ? p.mix : 17,
+    teams: [2, 3, 4].includes(p.teams) ? p.teams : 2,
+    assassins: Number.isInteger(p.assassins) && p.assassins >= 0 && p.assassins <= MAX_ASSASSINS ? p.assassins : 1,
+    penalties: p.penalties !== false,
+    stories: p.stories !== false
+  };
+  if (!out.packsS.length) out.packsS = ["mild", "hot", "wild", "confess"];
+  if (!out.packsG.length) out.packsG = PACKS_G.map(x => x.id);
+  return out;
+}
+const packsOf = c => (c.mode === "spicy" ? PACKS_S : PACKS_G);
+const selOf = c => (c.mode === "spicy" ? c.packsS : c.packsG);
+function cfgKey(c) {
+  return c.mode + "|" + packsOf(c).filter(p => selOf(c).includes(p.id)).map(p => p.code).join("") + "|" + (c.mode === "spicy" ? c.mix : 0) + "|" + c.teams + "|" + c.assassins;
+}
+function poolFor(mode, packs) {
+  const list = mode === "spicy" ? PACKS_S : PACKS_G, src = mode === "spicy" ? WORDS : WORDS_G;
+  const set = new Set();
+  list.forEach(p => { if (packs.includes(p.id)) src[p.id].forEach(w => set.add(w)); });
+  return Array.from(set).sort();
+}
+function layoutFor(teams, assassins) {
+  const L = LAYOUTS[teams];
+  return { size: L.size, cols: L.cols, rows: L.size / L.cols, start: L.start, other: L.other, assassins, neutral: L.size - L.start - L.other * (teams - 1) - assassins };
+}
+
+// Picks words so no theme dominates the board: a cap per theme group (2 for After Dark,
+// 1 for vague "vibe" words, 3 for Classic categories), no two words sharing a root word
+// (Booty / Booty Call), and for After Dark a set share of everyday words mixed in.
+function pickWords(rng, primary, secondary, nPrimary, total, cluster, capOf) {
+  const picks = [], inPick = new Set(), count = {}, used = new Set();
+  let boost = 0;
+  const groupOf = w => cluster[w] || ("_" + w);
+  const ok = w => !inPick.has(w) && (count[groupOf(w)] || 0) < capOf(groupOf(w)) + boost && !tokens(w).some(t => used.has(t));
+  const add = w => { const g = groupOf(w); count[g] = (count[g] || 0) + 1; tokens(w).forEach(t => used.add(t)); picks.push(w); inPick.add(w); };
+  const take = (list, n) => {
+    if (n <= 0) return;
+    let got = 0;
+    for (const w of shuffle(list.slice(), rng)) { if (got >= n) break; if (ok(w)) { add(w); got++; } }
+  };
+  take(primary, Math.min(nPrimary, total));
+  take(secondary, total - picks.length);
+  const fill = nPrimary >= total ? primary : primary.concat(secondary);
+  while (picks.length < total && boost < 6) { take(fill, total - picks.length); if (picks.length < total) boost++; }
+  if (picks.length < total) for (const w of shuffle(fill.concat(secondary), rng)) { if (picks.length >= total) break; if (!inPick.has(w)) add(w); }
+  return shuffle(picks, rng);
+}
+
+// Deals a fresh board. The starting team rotates every game (rot is a random offset fixed per room).
+function dealGame(cfg, seq, rot) {
+  const rng = rngFrom(Math.floor(Math.random() * 4294967296));
+  const L = layoutFor(cfg.teams, cfg.assassins);
+  let words;
+  if (cfg.mode === "spicy") {
+    const spicy = poolFor("spicy", cfg.packsS), set = new Set(spicy);
+    const everyday = Array.from(new Set(WORDS.classic)).filter(w => !set.has(w)).sort();
+    words = pickWords(rng, spicy, everyday, Math.round(cfg.mix / 25 * L.size), L.size, CLUSTER_S, capS);
+  } else {
+    words = pickWords(rng, poolFor("general", cfg.packsG), [], L.size, L.size, CLUSTER_G, capG);
+  }
+  const teams = TEAMS.slice(0, cfg.teams);
+  const si = (rot + seq - 1) % teams.length;
+  const order = teams.slice(si).concat(teams.slice(0, si));
+  const colors = [];
+  order.forEach((t, k) => { for (let j = 0; j < (k === 0 ? L.start : L.other); j++) colors.push(t); });
+  for (let j = 0; j < L.neutral; j++) colors.push("neutral");
+  for (let j = 0; j < L.assassins; j++) colors.push("assassin");
+  shuffle(colors, rng);
+  return { seq, mode: cfg.mode, cols: L.cols, size: L.size, assassins: L.assassins, words, colors, teams, order,
+    turn: order[0], revealed: Array(L.size).fill(false), out: {}, winner: null, reason: "", history: [], last: null };
+}
+
+// ---------- shared room data (Firebase drops empty values and may return arrays as objects) ----------
+function toArr(x, n, fill) {
+  let a = [];
+  if (Array.isArray(x)) a = x.slice();
+  else if (x && typeof x === "object") Object.keys(x).forEach(k => { a[Number(k)] = x[k]; });
+  if (n != null) { for (let i = 0; i < n; i++) if (a[i] === undefined || a[i] === null) a[i] = fill; a.length = n; }
+  return a;
+}
+function normRoom(r) {
+  if (!r || !r.game) return null;
+  const g = r.game;
+  const words = toArr(g.words);
+  const size = g.size || words.length;
+  const game = {
+    seq: g.seq || 1, mode: g.mode === "spicy" ? "spicy" : "general", cols: g.cols || 5, size, assassins: g.assassins || 0,
+    words: toArr(g.words, size, ""), colors: toArr(g.colors, size, "neutral"), teams: toArr(g.teams), order: toArr(g.order),
+    turn: g.turn || "red", revealed: toArr(g.revealed, size, false), out: g.out || {}, winner: g.winner || null, reason: g.reason || "",
+    history: toArr(g.history).filter(Boolean).map(h => ({ turn: h.turn, revealed: toArr(h.revealed, size, false), out: h.out || {}, winner: h.winner || null, reason: h.reason || "" })),
+    last: g.last || null
+  };
+  return { cfg: sanitize(r.cfg), rot: r.rot || 0, created: r.created || 0, game };
+}
+const clean = o => JSON.parse(JSON.stringify(o));
+
+// ---------- stores: Firebase for real rooms, browser-only for testing ----------
+function localStore() {
+  const ch = "BroadcastChannel" in window ? new BroadcastChannel("codenames-local") : null;
+  const subs = {};
+  const read = id => load("local-room:" + id);
+  const fire = id => (subs[id] || []).forEach(cb => cb(read(id)));
+  if (ch) ch.onmessage = e => fire(e.data);
+  return {
+    kind: "local",
+    subscribe(id, cb) { (subs[id] = subs[id] || []).push(cb); setTimeout(() => cb(read(id)), 0); return () => { subs[id] = (subs[id] || []).filter(x => x !== cb); }; },
+    transact(id, fn) {
+      const res = fn(read(id));
+      if (res !== undefined) { save("local-room:" + id, res); fire(id); if (ch) ch.postMessage(id); }
+      return Promise.resolve({ committed: res !== undefined });
+    },
+    onConnected(cb) { cb(true); }
+  };
+}
+async function firebaseStore(cfg) {
+  const appMod = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK}/firebase-app.js`);
+  const dbMod = await import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK}/firebase-database.js`);
+  const app = appMod.initializeApp(cfg);
+  const db = dbMod.getDatabase(app);
+  return {
+    kind: "firebase",
+    subscribe(id, cb) { return dbMod.onValue(dbMod.ref(db, "rooms/" + id), s => cb(s.val()), err => storeError(err)); },
+    transact(id, fn) { return dbMod.runTransaction(dbMod.ref(db, "rooms/" + id), fn); },
+    onConnected(cb) { dbMod.onValue(dbMod.ref(db, ".info/connected"), s => cb(!!s.val())); }
+  };
+}
+function storeError(err) {
+  console.error(err);
+  const denied = String(err && (err.code || err.message) || "").toLowerCase().indexOf("permission") > -1;
+  setConn("off", denied ? "Blocked by database rules" : "Can't reach the game server");
+  toast(denied ? "The database refused this. Publish the rules from database.rules.json in Firebase (see README)." : "Couldn't reach the game server. Check your connection.", true);
+}
+
+// ---------- state ----------
+let store = null, roomId = null, unsub = null, R = null, lastSeen = null, firstLoad = true;
+let spy = false, draft = null, draftDirty = false, pendingAnim = null;
+let localPrefs = sanitize(load("cn-prefs"));
+const winShown = {};
+
+function cleanName(s) { return String(s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
+function randomName(mode) {
+  const spicy = mode === "spicy";
+  const a = spicy ? ["velvet","naughty","steamy","cheeky","sultry","frisky","wicked","silky","sticky","spicy","tipsy","saucy"] : ["brave","silent","golden","lucky","rapid","secret","clever","hidden","cosmic","bold","quiet","swift"];
+  const n = spicy ? ["peach","cherry","kiss","tango","martini","garter","rose","flame","lace","tequila","honey","cuffs"] : ["falcon","comet","otter","harbor","maple","rocket","tiger","lantern","pebble","atlas","panda","river"];
+  const r = Math.random;
+  return a[Math.floor(r() * a.length)] + "-" + n[Math.floor(r() * n.length)] + "-" + (10 + Math.floor(r() * 90));
+}
+const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+function listNames(ts) { return ts.length <= 1 ? ts.map(cap).join("") : ts.slice(0, -1).map(cap).join(", ") + " and " + cap(ts[ts.length - 1]); }
+const left = (g, t) => g.colors.reduce((n, c, i) => n + (c === t && !g.revealed[i] ? 1 : 0), 0);
+const activeTeams = g => g.order.filter(t => !g.out[t]);
+function nextTeam(g, t) {
+  const n = g.order.length, idx = g.order.indexOf(t);
+  for (let k = 1; k <= n; k++) { const c = g.order[(idx + k) % n]; if (!g.out[c]) return c; }
+  return t;
+}
+function snap(g) {
+  g.history.push({ turn: g.turn, revealed: g.revealed.slice(), out: Object.assign({}, g.out), winner: g.winner, reason: g.reason });
+  if (g.history.length > 30) g.history.shift();
+}
+
+// Every shared change runs as a transaction on the room, so two people tapping at once can't clobber each other.
+function act(fn) {
+  if (!store || !roomId) return;
+  return store.transact(roomId, cur => {
+    const r = normRoom(cur);
+    if (!r) return undefined;
+    if (fn(r) === false) return undefined;
+    return clean(r);
+  }).catch(storeError);
+}
+
+// ---------- moves ----------
+function reveal(i) {
+  if (spy || !R) return;
+  const seq = R.game.seq;
+  if (R.game.winner || R.game.revealed[i]) return;
+  const id = rid();
+  act(r => {
+    const g = r.game, cfg = r.cfg;
+    if (g.seq !== seq || g.winner || g.revealed[i]) return false;
+    snap(g);
+    g.revealed[i] = true;
+    const c = g.colors[i], team = g.turn, word = g.words[i];
+    const party = g.mode === "spicy" && cfg.penalties;
+    const story = g.mode === "spicy" && cfg.stories && STORY.has(word) && c !== "assassin"
+      ? " Story time: whoever tapped it tells their “" + word + "” story, or drinks." : "";
+    let kind, msg = "", long = !!story;
+    if (c === "assassin") {
+      kind = "boom";
+      g.out[team] = true;
+      const rest = activeTeams(g);
+      if (rest.length <= 1) {
+        g.winner = rest[0] || nextTeam(g, team);
+        g.reason = cap(team) + " hit the assassin on “" + word + "”." + (g.order.length > 2 ? " " + cap(g.winner) + " is the last team standing." : "") + (party ? " " + cap(team) + " finishes their drinks." : "");
+      } else {
+        g.turn = nextTeam(g, team);
+        msg = cap(team) + " hit an assassin and is out! " + cap(g.turn) + "'s turn." + (party ? " " + cap(team) + ", finish your drinks." : "");
+        long = true;
+      }
+    } else if (c === "neutral") {
+      kind = "neutral";
+      g.turn = nextTeam(g, team);
+      msg = "Bystander. " + cap(g.turn) + "'s turn." + story;
+    } else if (c !== team) {
+      kind = "bad";
+      g.turn = nextTeam(g, team);
+      msg = (party ? "Wrong team! Whoever tapped it takes a sip. " : "That was " + cap(c) + "'s word. ") + cap(g.turn) + "'s turn." + story;
+    } else {
+      kind = "good";
+      msg = story.trim();
+    }
+    if (!g.winner) {
+      for (const t of g.order) {
+        if (!g.out[t] && left(g, t) === 0) {
+          const losers = g.order.filter(x => x !== t);
+          g.winner = t;
+          g.reason = cap(t) + " found all their words." + (party ? " " + listNames(losers) + " owe" + (losers.length === 1 ? "s" : "") + " a round." : "");
+          break;
+        }
+      }
+    }
+    if (g.winner) msg = "";
+    g.last = { id, i, kind, team, owner: c, msg, long };
+  });
+}
+function endTurn() {
+  if (!R || R.game.winner) return;
+  const seq = R.game.seq, turn = R.game.turn, id = rid();
+  act(r => {
+    const g = r.game;
+    if (g.seq !== seq || g.winner || g.turn !== turn) return false;
+    snap(g);
+    g.turn = nextTeam(g, turn);
+    g.last = { id, kind: "pass", msg: cap(turn) + " ended their turn. " + cap(g.turn) + "'s turn." };
+  });
+}
+function undo() {
+  if (!R || !R.game.history.length) return;
+  const seq = R.game.seq, id = rid();
+  act(r => {
+    const g = r.game;
+    if (g.seq !== seq || !g.history.length) return false;
+    const h = g.history.pop();
+    g.turn = h.turn; g.revealed = h.revealed; g.out = h.out || {}; g.winner = h.winner || null; g.reason = h.reason || "";
+    g.last = { id, kind: "undo", msg: "Last move undone. " + cap(g.turn) + "'s turn." };
+  });
+}
+function nextGame() {
+  if (!R) return;
+  const seq = R.game.seq;
+  act(r => { if (r.game.seq !== seq) return false; r.game = dealGame(r.cfg, seq + 1, r.rot); });
+}
+function dealWithDraft() {
+  if (!R || !draft) return;
+  const seq = R.game.seq, cfg = sanitize(draft);
+  localPrefs = cfg; save("cn-prefs", localPrefs);
+  draftDirty = false;
+  act(r => { if (r.game.seq !== seq) return false; r.cfg = cfg; r.game = dealGame(cfg, seq + 1, r.rot); });
+}
+function setRoomToggle(key, val) {
+  localPrefs[key] = val; save("cn-prefs", localPrefs);
+  if (draft) draft[key] = val;
+  act(r => { if (r.cfg[key] === val) return false; r.cfg[key] = val; });
+}
+
+// ---------- rooms ----------
+function setConn(state, text) { $("conn").className = "conn " + state; $("connText").textContent = text; }
+function showLoading(msg) {
+  const b = $("board"); b.innerHTML = "";
+  const p = document.createElement("p"); p.className = "loading"; p.textContent = msg; b.appendChild(p);
+}
+function showLobby() {
+  if (unsub) { unsub(); unsub = null; }
+  roomId = null; R = null;
+  $("overlay").hidden = true;
+  $("lobby").hidden = false; $("roomUI").hidden = true; $("roomForm").hidden = true;
+  document.body.classList.toggle("spicy", localPrefs.mode === "spicy");
+  $("modeTag").textContent = localPrefs.mode === "spicy" ? "After Dark" : "Classic";
+  $("stripe").style.background = "var(--accent)";
+  document.querySelectorAll("#lobbyMode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === localPrefs.mode)));
+  document.title = "Codenames";
+}
+function enterRoom(id) {
+  id = cleanName(id);
+  if (!id) { showLobby(); return; }
+  if (unsub) { unsub(); unsub = null; }
+  roomId = id; R = null; lastSeen = null; firstLoad = true; draft = null; draftDirty = false; pendingAnim = null;
+  spy = load("cn-spy:" + id) === true;
+  $("lobby").hidden = true; $("roomUI").hidden = false; $("roomForm").hidden = false;
+  $("roomName").value = id;
+  $("overlay").hidden = true;
+  document.title = "Codenames · " + id;
+  showLoading("Joining room “" + id + "”…");
+  unsub = store.subscribe(id, onRoom);
+  const cfg = sanitize(localPrefs), rot = Math.floor(Math.random() * 4);
+  store.transact(id, cur => (cur ? undefined : clean({ cfg, rot, created: Date.now(), game: dealGame(cfg, 1, rot) }))).catch(storeError);
+  save("cn-last", id);
+}
+function go(id, push) {
+  id = cleanName(id);
+  if (!id) { toast("Type a room name first."); return; }
+  if (push !== false) history.pushState(null, "", "#" + id);
+  enterRoom(id);
+}
+function route() {
+  const parts = decodeURIComponent(location.hash.slice(1)).split(".");
+  const id = cleanName(parts[0]);
+  if (!id) { showLobby(); return; }
+  if (id !== roomId) enterRoom(id);
+  if (parts[1] === "spy" && !spy) { spy = true; save("cn-spy:" + id, true); if (R) render(); }
+}
+
+function onRoom(raw) {
+  const r = normRoom(raw);
+  if (!r) { if (!R) showLoading("Setting up room “" + roomId + "”…"); return; }
+  const prev = R ? R.game : null;
+  R = r;
+  const g = r.game;
+  if (!draft || !draftDirty || (prev && prev.seq !== g.seq)) { draft = clean(r.cfg); draftDirty = false; }
+  draft.penalties = r.cfg.penalties; draft.stories = r.cfg.stories;
+  if (prev && prev.seq !== g.seq) {
+    $("overlay").hidden = true;
+    toast("New board dealt. " + cap(g.order[0]) + " goes first.");
+  }
+  if (g.last && g.last.id !== lastSeen) {
+    if (!firstLoad) {
+      const L = g.last;
+      if (["good", "bad", "neutral", "boom"].includes(L.kind) && prev && prev.seq === g.seq && !prev.revealed[L.i] && g.revealed[L.i]) pendingAnim = L;
+      if (L.msg) toast(L.msg, L.long);
+    }
+    lastSeen = g.last.id;
+  }
+  if (!g.winner) $("overlay").hidden = true;
+  render();
+  renderSetup();
+  firstLoad = false;
+}
+
+let toastTimer;
+function toast(msg, long) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  t.classList.toggle("story", !!long);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), long ? 5000 : 2600);
+}
+
+// ---------- effects ----------
+const reduceMotion = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888888";
+const fx = $("fx"), ctx = fx.getContext("2d");
+let parts = [], running = false;
+function sizeFx() { const d = window.devicePixelRatio || 1; fx.width = innerWidth * d; fx.height = innerHeight * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+sizeFx();
+function burst(x, y, colors, n, spread) {
+  for (let k = 0; k < n; k++) {
+    const a = Math.random() * Math.PI * 2, sp = 3 + Math.random() * (spread || 7);
+    parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3, g: .28, age: 0, life: 50 + Math.random() * 35,
+      w: 4 + Math.random() * 5, h: 6 + Math.random() * 7, rot: Math.random() * 6, vr: (Math.random() - .5) * .45, c: colors[k % colors.length] });
+  }
+  loop();
+}
+function rain(colors) {
+  for (let k = 0; k < 170; k++) {
+    parts.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * .5, vx: (Math.random() - .5) * 2, vy: 2 + Math.random() * 3, g: .05, age: 0, life: 170 + Math.random() * 60,
+      w: 5 + Math.random() * 5, h: 8 + Math.random() * 8, rot: Math.random() * 6, vr: (Math.random() - .5) * .3, c: colors[k % colors.length] });
+  }
+  loop();
+}
+function loop() { if (running) return; running = true; requestAnimationFrame(step); }
+function step() {
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => p.age < p.life && p.y < innerHeight + 40);
+  for (const p of parts) {
+    p.age++; p.vy += p.g; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+    ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, (p.life - p.age) / 25));
+    ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.rot * 1.3)) + 1);
+    ctx.restore();
+  }
+  if (parts.length) requestAnimationFrame(step); else { running = false; ctx.clearRect(0, 0, innerWidth, innerHeight); }
+}
+function flash(color, boom) {
+  const f = $("flash");
+  f.classList.remove("go", "boom"); void f.offsetWidth;
+  f.style.setProperty("--fc", color);
+  f.classList.toggle("boom", !!boom);
+  f.classList.add("go");
+}
+const STAMPS = { good: ["NICE!", "YES!", "NAILED IT", "SPOT ON", "BINGO"], bad: ["NOPE", "OOPS", "YIKES", "WRONG"], neutral: ["MISS", "MEH", "NOBODY"], boom: ["BOOM"] };
+const STAMPS_SPICY = { good: ["OOH YES", "SO HOT", "NAILED IT"], bad: ["AWKWARD", "SIP!", "OOPS"], neutral: ["COLD", "MEH"], boom: ["BOOM", "BUSTED"] };
+function animate(a) {
+  const b = $("board").children[a.i]; if (!b || !b.classList.contains("card")) return;
+  const set = R && R.game.mode === "spicy" ? STAMPS_SPICY[a.kind].concat(STAMPS[a.kind]) : STAMPS[a.kind];
+  b.classList.remove("a-good", "a-bad", "a-neutral", "a-boom"); void b.offsetWidth;
+  b.classList.add("a-" + a.kind);
+  const st = document.createElement("span"); st.className = "stamp"; st.textContent = set[Math.floor(Math.random() * set.length)];
+  b.appendChild(st);
+  setTimeout(() => { st.remove(); b.classList.remove("a-" + a.kind); }, 1600);
+  if (reduceMotion()) return;
+  const r = b.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+  if (a.kind === "good") setTimeout(() => burst(x, y, [cssVar("--" + a.team), cssVar("--" + a.team + "-ink"), cssVar("--" + a.team + "-soft")], 48), 280);
+  if (a.kind === "bad") setTimeout(() => flash(cssVar("--" + a.owner)), 300);
+  if (a.kind === "boom") {
+    setTimeout(() => {
+      flash(cssVar("--black"), true);
+      const bd = $("board"); bd.classList.remove("quake"); void bd.offsetWidth; bd.classList.add("quake");
+      burst(x, y, [cssVar("--black"), "#5a5a5e", cssVar("--muted")], 60, 10);
+    }, 250);
+  }
+}
+
+// ---------- render ----------
+function render() {
+  if (!R) return;
+  const g = R.game, board = $("board");
+  document.body.classList.toggle("spicy", g.mode === "spicy");
+  $("modeTag").textContent = g.mode === "spicy" ? "After Dark" : "Classic";
+  board.classList.toggle("spy", spy);
+  board.classList.toggle("wide", g.cols === 6);
+  board.style.gridTemplateColumns = "repeat(" + g.cols + ", minmax(0, 1fr))";
+  if (board.children.length !== g.size || !board.firstElementChild.classList.contains("card")) {
+    board.innerHTML = "";
+    for (let i = 0; i < g.size; i++) {
+      const b = document.createElement("button");
+      b.className = "card"; b.type = "button";
+      b.addEventListener("click", () => reveal(i));
+      const w = document.createElement("span"); w.className = "w"; b.appendChild(w);
+      board.appendChild(b);
+    }
+  }
+  const label = c => (c === "neutral" ? "bystander" : c);
+  for (let i = 0; i < g.size; i++) {
+    const b = board.children[i], w = g.words[i];
+    b.querySelector(".w").textContent = w;
+    if (spy || g.revealed[i] || g.winner) b.dataset.c = g.colors[i]; else delete b.dataset.c;
+    b.classList.toggle("revealed", !!g.revealed[i]);
+    b.setAttribute("aria-label", w + (g.revealed[i] || spy ? ", " + label(g.colors[i]) : ""));
+  }
+  const sc = $("score"); sc.innerHTML = "";
+  g.teams.forEach((t, k) => {
+    if (k) { const d = document.createElement("span"); d.className = "dash"; d.textContent = "–"; sc.appendChild(d); }
+    const s = document.createElement("span");
+    s.className = "sc t-" + t + (g.out[t] ? " out" : "") + (!g.winner && t === g.turn ? " now" : "");
+    s.textContent = left(g, t);
+    s.title = cap(t) + (g.out[t] ? " (out)" : ": " + left(g, t) + " left");
+    sc.appendChild(s);
+  });
+  const shown = g.winner || g.turn;
+  const tt = $("turnText"), et = $("endTurn");
+  tt.className = "turn t-" + shown;
+  tt.textContent = g.winner ? cap(g.winner) + " wins!" : cap(g.turn) + "'s turn";
+  if (g.winner) delete et.dataset.team; else et.dataset.team = g.turn;
+  et.textContent = g.winner ? "Game over" : "End " + g.turn + "'s turn";
+  et.disabled = !!g.winner;
+  $("stripe").style.background = "var(--" + shown + ")";
+  $("undo").disabled = g.history.length === 0;
+  $("viewPlayer").setAttribute("aria-pressed", String(!spy));
+  $("viewSpy").setAttribute("aria-pressed", String(spy));
+  $("hint").textContent = spy
+    ? "Spymaster view: tapping is off on this device. Don't let your team see this screen!"
+    : "Tap a word to guess. Everyone in the room sees it instantly.";
+  $("roomLink").value = location.href.split("#")[0] + "#" + roomId;
+
+  let animated = false;
+  if (pendingAnim) { const a = pendingAnim; pendingAnim = null; animated = true; requestAnimationFrame(() => animate(a)); }
+  const key = g.seq + ":" + g.history.length;
+  if (g.winner && !winShown[key]) {
+    winShown[key] = true;
+    const celebrate = !firstLoad;
+    setTimeout(() => {
+      if (!R || !R.game.winner) return;
+      const h = $("winTitle"); h.textContent = cap(R.game.winner) + " wins"; h.className = "t-" + R.game.winner;
+      $("winText").textContent = R.game.reason;
+      $("overlay").hidden = false;
+      if (celebrate && !reduceMotion()) rain([cssVar("--" + R.game.winner), cssVar("--" + R.game.winner + "-ink"), cssVar("--" + R.game.winner + "-soft"), "#ffffff"]);
+    }, animated ? 1100 : 0);
+  }
+  requestAnimationFrame(fitAll);
+}
+
+function fitAll() {
+  for (const b of $("board").children) {
+    const s = b.querySelector && b.querySelector(".w"); if (!s) continue;
+    const w = b.clientWidth, h = b.clientHeight;
+    const base = Math.max(9, Math.min(24, w / 6.2));
+    let size = base, guard = 0;
+    s.classList.remove("two");
+    s.style.fontSize = size + "px";
+    const multi = s.textContent.indexOf(" ") > -1;
+    while (guard++ < 80 && (s.scrollWidth > w - 8 || s.scrollHeight > h - 6) && size > 7) {
+      if (multi && !s.classList.contains("two") && size < base * .85) { s.classList.add("two"); continue; }
+      size -= .5; s.style.fontSize = size + "px";
+    }
+  }
+}
+
+function renderSetup() {
+  if (!draft || !R) return;
+  const d = draft, spicyMode = d.mode === "spicy";
+  document.querySelectorAll("#modeSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === d.mode)));
+  document.querySelectorAll("#teamsSeg button").forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.teams) === d.teams)));
+  $("assOut").textContent = d.assassins;
+  $("assMinus").disabled = d.assassins <= 0;
+  $("assPlus").disabled = d.assassins >= MAX_ASSASSINS;
+  $("mixField").hidden = !spicyMode;
+  $("spicyOpts").hidden = R.game.mode !== "spicy";
+  const L = layoutFor(d.teams, d.assassins);
+  $("layoutLine").textContent = L.cols + "×" + L.rows + " board (" + L.size + " words). Starting team gets " + L.start + ", " + (d.teams === 2 ? "the other team gets " : "each other team gets ") + L.other + ". " +
+    L.assassins + " black tile" + (L.assassins === 1 ? "" : "s") + ", " + L.neutral + " bystanders." +
+    (d.teams > 2 ? " Hitting a black tile knocks that team out." : " Hitting a black tile loses the game.");
+  $("balanceLine").textContent = spicyMode
+    ? "Boards are balanced automatically: at most 2 words from any theme (drinks, underwear, toys, body parts…), no two words that share a root like Booty and Booty Call, and only one vague word like Naughty or Horny."
+    : "Boards are balanced automatically: at most 3 words from any category (animals, food, space…) and no two words that share a root.";
+  const sel = $("mix");
+  if (!sel.options.length) MIXES.forEach(m => { const o = document.createElement("option"); o.value = m.n; o.textContent = m.label; sel.appendChild(o); });
+  sel.value = String(d.mix);
+  $("penalties").checked = R.cfg.penalties;
+  $("stories").checked = R.cfg.stories;
+  const dirty = cfgKey(d) !== cfgKey(R.cfg);
+  const deal = $("deal");
+  deal.textContent = dirty ? "Deal new board with these settings" : "Deal a new board";
+  deal.classList.toggle("dirty", dirty);
+  const box = $("packs"); box.innerHTML = "";
+  const src = spicyMode ? WORDS : WORDS_G;
+  packsOf(d).forEach(p => {
+    const id = "pack-" + p.id;
+    const lab = document.createElement("label");
+    lab.className = "pack"; lab.htmlFor = id;
+    lab.innerHTML = '<input type="checkbox" id="' + id + '"><div><span class="heat"></span><b></b><small></small></div>';
+    lab.querySelector(".heat").textContent = p.heat;
+    lab.querySelector("b").textContent = p.name + " (" + new Set(src[p.id]).size + ")";
+    lab.querySelector("small").textContent = p.desc;
+    const cb = lab.querySelector("input");
+    cb.checked = selOf(d).includes(p.id);
+    cb.addEventListener("change", () => {
+      const next = packsOf(d).map(x => x.id).filter(x => $("pack-" + x).checked);
+      if (poolFor(d.mode, next).length < 36) { cb.checked = !cb.checked; toast("Keep at least one pack on."); return; }
+      if (spicyMode) d.packsS = next; else d.packsG = next;
+      editDraft();
+    });
+    box.appendChild(lab);
+  });
+}
+function editDraft() { draftDirty = true; renderSetup(); }
+
+// ---------- wiring ----------
+$("home").addEventListener("click", e => { e.preventDefault(); history.pushState(null, "", location.pathname + location.search); showLobby(); });
+$("createRoom").addEventListener("click", () => go(randomName(localPrefs.mode)));
+$("joinForm").addEventListener("submit", e => { e.preventDefault(); go($("joinCode").value); });
+$("roomForm").addEventListener("submit", e => { e.preventDefault(); go($("roomName").value); });
+document.querySelectorAll("#lobbyMode button").forEach(b => b.addEventListener("click", () => {
+  localPrefs.mode = b.dataset.mode; save("cn-prefs", localPrefs); showLobby();
+}));
+$("newGame").addEventListener("click", nextGame);
+$("winNext").addEventListener("click", nextGame);
+$("showBoard").addEventListener("click", () => { $("overlay").hidden = true; });
+$("endTurn").addEventListener("click", endTurn);
+$("undo").addEventListener("click", undo);
+$("viewPlayer").addEventListener("click", () => { spy = false; save("cn-spy:" + roomId, false); render(); });
+$("viewSpy").addEventListener("click", () => { spy = true; save("cn-spy:" + roomId, true); render(); });
+document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => {
+  if (!draft || draft.mode === b.dataset.mode) return;
+  draft.mode = b.dataset.mode; editDraft();
+}));
+document.querySelectorAll("#teamsSeg button").forEach(b => b.addEventListener("click", () => {
+  if (!draft) return; draft.teams = Number(b.dataset.teams); editDraft();
+}));
+$("assMinus").addEventListener("click", () => { if (draft && draft.assassins > 0) { draft.assassins--; editDraft(); } });
+$("assPlus").addEventListener("click", () => { if (draft && draft.assassins < MAX_ASSASSINS) { draft.assassins++; editDraft(); } });
+$("mix").addEventListener("change", e => { if (draft) { draft.mix = Number(e.target.value); editDraft(); } });
+$("deal").addEventListener("click", dealWithDraft);
+$("penalties").addEventListener("change", e => setRoomToggle("penalties", e.target.checked));
+$("stories").addEventListener("change", e => setRoomToggle("stories", e.target.checked));
+$("copyRoom").addEventListener("click", () => {
+  const inp = $("roomLink");
+  const fallback = () => { inp.focus(); inp.select(); toast("Link selected. Copy it from the field."); };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(inp.value).then(() => toast("Room link copied"), fallback);
+    else fallback();
+  } catch (e) { fallback(); }
+});
+window.addEventListener("resize", () => { sizeFx(); requestAnimationFrame(fitAll); });
+window.addEventListener("hashchange", route);
+window.addEventListener("popstate", route);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitAll());
+
+// ---------- start ----------
+(async function init() {
+  const cfg = window.FIREBASE_CONFIG;
+  const wantLocal = new URLSearchParams(location.search).has("local") || !cfg || !cfg.databaseURL;
+  if (wantLocal) {
+    store = localStore();
+    setConn("local", "Test mode: this browser only");
+  } else {
+    try {
+      store = await firebaseStore(cfg);
+      let seen = false;
+      store.onConnected(ok => { if (ok) seen = true; setConn(ok ? "live" : "off", ok ? "Live" : (seen ? "Reconnecting…" : "Connecting…")); });
+      setTimeout(() => { if (!seen) { setConn("off", "Can't reach the game server"); toast("Can't reach the game server. Check databaseURL in firebase-config.js (see README).", true); } }, 10000);
+    } catch (e) {
+      console.error(e);
+      store = localStore();
+      setConn("off", "Offline: this browser only");
+      toast("Couldn't load the game server, so this is running in this browser only. Check your internet and reload.", true);
+    }
+  }
+  route();
+})();
+</script>
+</body>
+</html>
