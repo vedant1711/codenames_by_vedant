@@ -202,7 +202,9 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
 .dealrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 #deal.dirty { background: var(--accent); border-color: var(--accent); }
 /* ---------- Vedant's birthday edition ---------- */
-:root { --gold: #e9b63b; --gold-ink: #8a6200; --p1: #e8712b; --p2: #7a4cc2; --p3: #23868c; }
+:root { --gold: #e9b63b; --gold-ink: #8a6200; --p1: #e8712b; --p2: #7a4cc2; --p3: #23868c; --p4: #b5435f; }
+.wheelwrap.dare-wheelwrap { width: 240px; height: 240px; }
+.wheel .slice { position: absolute; left: 50%; top: 50%; width: 74px; text-align: center; white-space: nowrap; font-family: var(--font-card); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .01em; line-height: 1; color: #ffffff; }
 .card .vmark { position: absolute; top: 4px; right: 5px; font-family: var(--font-card); font-weight: 700; font-size: 11px; line-height: 1; padding: 2px 4px; border-radius: 3px; background: var(--gold); color: #3a2e00; letter-spacing: .04em; pointer-events: none; z-index: 1; }
 .powerline { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 0; }
 .chip { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid currentColor; }
@@ -381,8 +383,12 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
     <p class="kicker">Wrong Vedant word</p>
     <h2 id="dareTitle">Dare time!</h2>
     <p id="dareIntro"></p>
-    <p class="dare" id="dareText"></p>
-    <div class="row"><button type="button" class="btn-primary" id="dareDone">Dare done</button></div>
+    <div class="wheelwrap dare-wheelwrap" aria-hidden="true"><div class="wheel" id="dareWheel"></div></div>
+    <p class="dare" id="dareText" hidden></p>
+    <div class="row">
+      <button type="button" class="btn-primary btn-big" id="dareSpin">Spin for a dare</button>
+      <button type="button" class="btn-primary" id="dareDone" hidden>Dare done</button>
+    </div>
   </div>
 </div>
 <div class="overlay" id="overlay" hidden>
@@ -577,14 +583,14 @@ function applyModeLook(mode) {
   $("modeTag").textContent = MODE_NAMES[mode] || "Classic";
 }
 const DARES = [
-  "Name 3 things Vedant would order at an all-you-can-eat place.",
-  "Do the Naruto run across the room.",
-  "{PUSHUPS}",
-  "Give Vedant a genuine compliment.",
-  "Tell the room how you met Vedant.",
-  "Tell the room a crazy memory you have of Vedant.",
-  "Feed Vedant: bring him a snack from the table.",
-  "Do a 10-second Vedant impression. The room votes on how accurate it was."
+  { label: "Buffet Order", text: "Name 3 things Vedant would order at an all-you-can-eat place." },
+  { label: "Naruto Run", text: "Do the Naruto run across the room." },
+  { label: "Pushups", text: "{PUSHUPS}" },
+  { label: "Compliment", text: "Give Vedant a genuine compliment." },
+  { label: "How You Met", text: "Tell the room how you met Vedant." },
+  { label: "Crazy Memory", text: "Tell the room a crazy memory you have of Vedant." },
+  { label: "Feed Vedant", text: "Feed Vedant: bring him a snack from the table." },
+  { label: "Impression", text: "Do a 10-second Vedant impression. The room votes on how accurate it was." }
 ];
 
 // ---------- random helpers ----------
@@ -845,12 +851,23 @@ function passTurn(g, from) {
   if (q && q.state === "queued") q.state = "active";
   return notes.join(" ");
 }
-function makeDare(g, team, cfg) {
+// Dare text for a wheel slice; the pushup count is worked out when the wheel lands.
+function dareText(g, team, idx) {
+  const t = DARES[idx].text;
+  if (t !== "{PUSHUPS}") return t;
   const k = g.colors.reduce((n, c, j) => n + (c === team && g.revealed[j] ? 1 : 0), 0);
-  let t = DARES[Math.floor(Math.random() * DARES.length)];
-  if (t === "{PUSHUPS}") t = "Do " + Math.max(1, k) * 3 + " pushups: " + k + " word" + (k === 1 ? "" : "s") + " your team has guessed × 3" + (k === 0 ? " (minimum 3)" : "") + ". You can hand them to a teammate.";
-  if (g.mode === "spicy" && cfg.penalties) t += " Or take a shot.";
-  return t;
+  return "Do " + Math.max(1, k) * 3 + " pushups: " + k + " word" + (k === 1 ? "" : "s") + " your team has guessed × 3" + (k === 0 ? " (minimum 3)" : "") + ". You can hand them to a teammate.";
+}
+function spinDare() {
+  if (!R || !R.game.dare || (R.game.dare.result !== null && R.game.dare.result !== undefined)) return;
+  const did = R.game.dare.id, seq = R.game.seq;
+  $("dareSpin").disabled = true;
+  act(r => {
+    const g = r.game, d = g.dare;
+    if (g.seq !== seq || !d || d.id !== did || (d.result !== null && d.result !== undefined)) return false;
+    d.result = Math.floor(Math.random() * DARES.length);
+    d.text = dareText(g, d.team, d.result);
+  });
 }
 
 // Every shared change runs as a transaction on the room, so two people tapping at once can't clobber each other.
@@ -931,7 +948,7 @@ function reveal(i) {
     if (g.winner) msg = "";
     if (isV && c !== "assassin" && c !== "neutral") {
       if (c === team) { if (!g.winner) { g.spin = { id, team, word, result: null }; msg = ""; } }
-      else g.dare = { id, team, owner: c, word, text: makeDare(g, team, cfg) };
+      else g.dare = { id, team, owner: c, word, result: null, text: "" };
     }
     g.last = { id, i, kind, team, owner: c, msg, long, vedant: isV };
   });
@@ -1059,7 +1076,7 @@ function onRoom(raw) {
   }
   if (firstLoad) {
     // don't replay old pop-ups for someone joining mid-game
-    if (g.dare) dareClosedId = g.dare.id;
+    if (g.dare && g.dare.result !== null && g.dare.result !== undefined) { dareClosedId = g.dare.id; dareAnimId = g.dare.id; }
     if (g.spin && g.spin.result) { spinClosedId = g.spin.id; spinAnimId = g.spin.id; }
   }
   if (!g.winner) $("overlay").hidden = true;
@@ -1071,7 +1088,7 @@ function onRoom(raw) {
 }
 
 // ---------- Vedant pop-ups: power wheel and dares ----------
-let spinClosedId = null, spinAnimId = null, dareClosedId = null, vTimer = null;
+let spinClosedId = null, spinAnimId = null, dareClosedId = null, dareAnimId = null, vTimer = null;
 function buildPowerList(highlight) {
   const ul = $("plist"); ul.innerHTML = "";
   POWERS.forEach(p => {
@@ -1117,16 +1134,46 @@ function renderVedant() {
     }
     so.hidden = false;
   } else so.hidden = true;
-  // dare
+  // dare wheel
   const dov = $("dareOverlay");
   if (d && d.id !== dareClosedId) {
     $("dareTitle").textContent = cap(d.team) + ", dare time!";
     $("dareTitle").className = "t-" + d.team;
-    $("dareIntro").textContent = "“" + d.word + "” was " + cap(d.owner) + "'s hidden Vedant word, not yours. Whoever tapped it:";
-    $("dareText").textContent = d.text;
+    $("dareIntro").textContent = "“" + d.word + "” was " + cap(d.owner) + "'s hidden Vedant word, not yours. Whoever tapped it spins the wheel for a dare.";
+    const wheel = $("dareWheel");
+    const hasResult = d.result !== null && d.result !== undefined;
+    if (!hasResult) {
+      if (dareAnimId !== d.id) { wheel.style.transition = "none"; wheel.style.transform = "rotate(0deg)"; void wheel.offsetWidth; wheel.style.transition = ""; }
+      $("dareSpin").hidden = false; $("dareSpin").disabled = false;
+      $("dareText").hidden = true; $("dareDone").hidden = true;
+    } else if (dareAnimId !== d.id) {
+      dareAnimId = d.id;
+      const seg = 360 / DARES.length, center = d.result * seg + seg / 2, jitter = Math.random() * seg * .6 - seg * .3;
+      $("dareSpin").hidden = true; $("dareText").hidden = true; $("dareDone").hidden = true;
+      const done = () => {
+        $("dareText").textContent = d.text;
+        $("dareText").hidden = false; $("dareDone").hidden = false;
+        if (!reduceMotion()) { const r = wheel.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, [cssVar("--" + d.team), cssVar("--p1"), cssVar("--gold")], 50, 9); }
+      };
+      if (reduceMotion()) { wheel.style.transition = "none"; wheel.style.transform = "rotate(" + (360 - center) + "deg)"; done(); }
+      else { requestAnimationFrame(() => { wheel.style.transform = "rotate(" + (360 * 6 + 360 - center + jitter) + "deg)"; }); setTimeout(done, 3500); }
+    }
     dov.hidden = false;
   } else dov.hidden = true;
 }
+// Builds the dare wheel once: one colored slice and a label per dare.
+function buildDareWheel() {
+  const wheel = $("dareWheel"), seg = 360 / DARES.length, cols = ["--p1", "--p2", "--p3", "--p4"];
+  wheel.style.background = "conic-gradient(" + DARES.map((x, k) => "var(" + cols[k % cols.length] + ") " + (k * seg) + "deg " + ((k + 1) * seg) + "deg").join(", ") + ")";
+  DARES.forEach((x, k) => {
+    const s = document.createElement("span");
+    s.className = "slice";
+    s.textContent = x.label;
+    s.style.transform = "translate(-50%, -50%) rotate(" + (k * seg + seg / 2) + "deg) translateY(-63px) rotate(-90deg)";
+    wheel.appendChild(s);
+  });
+}
+buildDareWheel();
 
 let toastTimer;
 function toast(msg, long) {
@@ -1382,6 +1429,7 @@ $("mix").addEventListener("change", e => { if (draft) { draft.mix = Number(e.tar
 $("deal").addEventListener("click", dealWithDraft);
 $("spinBtn").addEventListener("click", spinWheel);
 $("spinClose").addEventListener("click", () => { if (R && R.game.spin) spinClosedId = R.game.spin.id; $("spinOverlay").hidden = true; });
+$("dareSpin").addEventListener("click", spinDare);
 $("dareDone").addEventListener("click", () => { if (R && R.game.dare) dareClosedId = R.game.dare.id; $("dareOverlay").hidden = true; });
 $("penalties").addEventListener("change", e => setRoomToggle("penalties", e.target.checked));
 $("stories").addEventListener("change", e => setRoomToggle("stories", e.target.checked));
