@@ -29,6 +29,9 @@
   color-scheme: light;
 }
 body.spicy { --accent: var(--spice); }
+body.vedant { --accent: #9a6a00; }
+#lobbyMode, #modeSeg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#lobbyMode button, #modeSeg button { justify-content: center; text-align: center; line-height: 1.2; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body {
@@ -198,6 +201,25 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
 .board .loading { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 60px 0; margin: 0; font-size: 15px; }
 .dealrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 #deal.dirty { background: var(--accent); border-color: var(--accent); }
+/* ---------- Vedant's birthday edition ---------- */
+:root { --gold: #e9b63b; --gold-ink: #8a6200; --p1: #e8712b; --p2: #7a4cc2; --p3: #23868c; }
+.card .vmark { position: absolute; top: 4px; right: 5px; font-family: var(--font-card); font-weight: 700; font-size: 11px; line-height: 1; padding: 2px 4px; border-radius: 3px; background: var(--gold); color: #3a2e00; letter-spacing: .04em; pointer-events: none; z-index: 1; }
+.powerline { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 0; }
+.chip { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid currentColor; }
+.vmodal { max-width: 440px; max-height: calc(100% - 8px); overflow-y: auto; }
+.kicker { font-family: var(--font-card); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-ink); font-size: 14px; margin: 0 !important; }
+.wheelwrap { position: relative; width: 210px; height: 210px; max-width: 100%; margin: 8px auto 4px; }
+.wheelwrap::after { content: ""; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid var(--ink); z-index: 2; }
+.wheel { position: relative; width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--ink); background: conic-gradient(var(--p1) 0deg 120deg, var(--p2) 120deg 240deg, var(--p3) 240deg 360deg); transition: transform 3.4s cubic-bezier(.12,.72,.1,1); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.wheel span { position: absolute; left: 50%; top: 50%; width: 84px; text-align: center; font-family: var(--font-card); font-weight: 700; text-transform: uppercase; font-size: 15px; line-height: 1.05; color: #ffffff; }
+.wheel::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--ink); }
+.plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; font-size: 14px; line-height: 1.4; color: var(--muted); }
+.plist li { display: flex; gap: 9px; align-items: flex-start; padding: 6px 8px; border-radius: 6px; }
+.plist li b { color: var(--ink); }
+.plist li.win { background: var(--tan-soft); outline: 2px solid var(--gold); }
+.plist i { width: 12px; height: 12px; border-radius: 3px; flex: none; margin-top: 4px; }
+.dare { font-size: 19px; font-weight: 600; color: var(--ink) !important; line-height: 1.35; }
+#dareOverlay, #spinOverlay { z-index: 31; }
 </style>
 <script src="firebase-config.js"></script>
 </head>
@@ -223,6 +245,7 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
       <div class="seg" role="group" aria-labelledby="lobbyModeLbl" id="lobbyMode">
         <button type="button" data-mode="general" aria-pressed="true">Classic</button>
         <button type="button" data-mode="spicy" aria-pressed="false">After Dark</button>
+        <button type="button" data-mode="vedant" aria-pressed="false">Vedant's Birthday</button>
       </div>
     </div>
     <button type="button" class="btn-primary btn-big" id="createRoom">Create a room</button>
@@ -238,6 +261,8 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
       <div class="turn" id="turnText"></div>
       <button id="endTurn" type="button">End turn</button>
     </div>
+
+    <p class="powerline" id="powerLine" hidden></p>
 
     <div class="board" id="board" aria-label="Codenames board"></div>
 
@@ -272,6 +297,7 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
             <div class="seg" role="group" aria-labelledby="modeLbl" id="modeSeg">
               <button type="button" data-mode="general" aria-pressed="true">Classic</button>
               <button type="button" data-mode="spicy" aria-pressed="false">After Dark</button>
+        <button type="button" data-mode="vedant" aria-pressed="false">Vedant's Birthday</button>
             </div>
           </div>
           <div class="field">
@@ -318,6 +344,8 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
           <li>Hit your own color and keep guessing (up to the number plus one). Tan is a bystander and ends your turn. Another team's color ends your turn and helps that team.</li>
           <li>Black tiles are assassins. With 2 teams, touching one loses the game on the spot. With 3 or 4 teams, that team is knocked out and the rest play on. The last team standing wins.</li>
           <li>The starting team has one extra word, and the starting team rotates every game so everyone gets a turn going first. Board size grows with teams: 5×5 for 2, 6×5 for 3, 6×6 for 4.</li>
+          <li>Vedant's Birthday mode (Classic words plus Vedant words): every team has one hidden Vedant word on its own color, and a few lookalike words are decoys. Spymasters see a gold V on the real ones. Find your team's Vedant word and spin the wheel for a power. Find another team's and whoever tapped it does a dare.</li>
+          <li>Powers: <b>Cheat Day</b> means your next wrong guess doesn't end your turn. <b>Saiyan Comeback</b> means a black tile only costs you your next turn instead of the game (lasts until used). <b>Superset</b> means your spymaster can give a two-word clue next turn.</li>
           <li>After Dark only: when a Confessions word like "Worst Date" or "Drunk Text" is revealed, the person who tapped it tells their real story about it, or drinks.</li>
         </ol>
       </div>
@@ -328,6 +356,35 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
 <div id="flash" aria-hidden="true"></div>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="spinOverlay" hidden>
+  <div class="modal vmodal" role="dialog" aria-modal="true" aria-labelledby="spinTitle">
+    <p class="kicker">Vedant word!</p>
+    <h2 id="spinTitle">Red found it!</h2>
+    <p id="spinText"></p>
+    <div class="wheelwrap" aria-hidden="true">
+      <div class="wheel" id="wheel">
+        <span style="transform: translate(-50%, -50%) rotate(60deg) translateY(-58px)">Cheat Day</span>
+        <span style="transform: translate(-50%, -50%) rotate(180deg) translateY(-58px) rotate(180deg)">Saiyan Comeback</span>
+        <span style="transform: translate(-50%, -50%) rotate(300deg) translateY(-58px)">Superset</span>
+      </div>
+    </div>
+    <ul class="plist" id="plist"></ul>
+    <p class="dare" id="spinResult" hidden></p>
+    <div class="row">
+      <button type="button" class="btn-primary btn-big" id="spinBtn">Spin the wheel</button>
+      <button type="button" class="btn-primary" id="spinClose" hidden>Back to the game</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="dareOverlay" hidden>
+  <div class="modal vmodal" role="dialog" aria-modal="true" aria-labelledby="dareTitle">
+    <p class="kicker">Wrong Vedant word</p>
+    <h2 id="dareTitle">Dare time!</h2>
+    <p id="dareIntro"></p>
+    <p class="dare" id="dareText"></p>
+    <div class="row"><button type="button" class="btn-primary" id="dareDone">Dare done</button></div>
+  </div>
+</div>
 <div class="overlay" id="overlay" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
     <h2 id="winTitle">Red wins</h2>
@@ -499,6 +556,37 @@ const LAYOUTS = { 2: { size: 25, cols: 5, start: 9, other: 8 }, 3: { size: 30, c
 const MAX_ASSASSINS = 5;
 const STORY = new Set(WORDS.confess);
 
+// ---------- Vedant's birthday edition ----------
+// Each team gets one hidden Vedant word on its own color, plus a few lookalike decoys from the same list.
+const VEDANT_WORDS = {
+  food: ["All You Can Eat","Seconds","Appetite","Buffet","Food Coma","Midnight Snack","Third Plate","Cheat Meal","Family Size","Leftovers","Refill","Second Dinner","Combo Meal","Super Size","Bottomless","Takeout","Late Night Order"],
+  gym: ["Protein","Extra Protein","Leg Day","Workout","Gains","Bench Press","Bulking","Pre-Workout","Dumbbell","Deadlift","Squat Rack","Rest Day","Cardio","Personal Record","Spotter","Barbell"],
+  anime: ["Manga","Luffy","Zoro","Sanji","Goku","Vegeta","Super Saiyan","Senzu Bean","Sasuke","Kakashi","Hokage","Rasengan","Shadow Clone","Nine Tails","Ramen","Eren","Levi","Mikasa","Survey Corps","Ryuk","Kira","Saitama","Genos","Asta","Grimoire","Straw Hat","Devil Fruit","Pirate King","Training Arc"]
+};
+const VEDANT = Array.from(new Set([].concat(VEDANT_WORDS.food, VEDANT_WORDS.gym, VEDANT_WORDS.anime)));
+const POWERS = [
+  { key: "cheat", name: "Cheat Day", color: "--p1", desc: "Your team's next wrong guess doesn't end your turn. Black tiles still count." },
+  { key: "comeback", name: "Saiyan Comeback", color: "--p2", desc: "Hit a black tile and you survive: your team just sits out its next turn. Lasts until used." },
+  { key: "superset", name: "Superset", color: "--p3", desc: "On your team's next turn, your spymaster can give a two-word clue." }
+];
+const powerOf = k => POWERS.find(p => p.key === k);
+const MODE_NAMES = { general: "Classic", spicy: "After Dark", vedant: "Vedant's Birthday" };
+function applyModeLook(mode) {
+  document.body.classList.toggle("spicy", mode === "spicy");
+  document.body.classList.toggle("vedant", mode === "vedant");
+  $("modeTag").textContent = MODE_NAMES[mode] || "Classic";
+}
+const DARES = [
+  "Name 3 things Vedant would order at an all-you-can-eat place.",
+  "Do the Naruto run across the room.",
+  "{PUSHUPS}",
+  "Give Vedant a genuine compliment.",
+  "Tell the room how you met Vedant.",
+  "Tell the room a crazy memory you have of Vedant.",
+  "Feed Vedant: bring him a snack from the table.",
+  "Do a 10-second Vedant impression. The room votes on how accurate it was."
+];
+
 // ---------- random helpers ----------
 function rngFrom(seed) {
   let a = seed;
@@ -524,7 +612,7 @@ function sanitize(p) {
   p = p || {};
   const arr = a => (Array.isArray(a) ? a : (a && typeof a === "object" ? Object.values(a) : []));
   const out = {
-    mode: p.mode === "spicy" ? "spicy" : "general",
+    mode: ["spicy", "vedant"].includes(p.mode) ? p.mode : "general",
     packsS: arr(p.packsS).filter(id => PACKS_S.some(x => x.id === id)),
     packsG: arr(p.packsG).filter(id => PACKS_G.some(x => x.id === id)),
     mix: MIXES.some(m => m.n === p.mix) ? p.mix : 17,
@@ -556,9 +644,11 @@ function layoutFor(teams, assassins) {
 // Picks words so no theme dominates the board: a cap per theme group (2 for After Dark,
 // 1 for vague "vibe" words, 3 for Classic categories), no two words sharing a root word
 // (Booty / Booty Call), and for After Dark a set share of everyday words mixed in.
-function pickWords(rng, primary, secondary, nPrimary, total, cluster, capOf) {
+function pickWords(rng, primary, secondary, nPrimary, total, cluster, capOf, preset) {
   const picks = [], inPick = new Set(), count = {}, used = new Set();
   let boost = 0;
+  // words already placed (Vedant words) can't repeat and block words that share a root with them
+  (preset || []).forEach(w => { inPick.add(w); tokens(w).forEach(t => used.add(t)); });
   const groupOf = w => cluster[w] || ("_" + w);
   const ok = w => !inPick.has(w) && (count[groupOf(w)] || 0) < capOf(groupOf(w)) + boost && !tokens(w).some(t => used.has(t));
   const add = w => { const g = groupOf(w); count[g] = (count[g] || 0) + 1; tokens(w).forEach(t => used.add(t)); picks.push(w); inPick.add(w); };
@@ -579,32 +669,62 @@ function pickWords(rng, primary, secondary, nPrimary, total, cluster, capOf) {
 function dealGame(cfg, seq, rot) {
   const rng = rngFrom(Math.floor(Math.random() * 4294967296));
   const L = layoutFor(cfg.teams, cfg.assassins);
+  const teams = TEAMS.slice(0, cfg.teams);
+  const si = (rot + seq - 1) % teams.length;
+  const order = teams.slice(si).concat(teams.slice(0, si));
+
+  // Vedant words: one real one per team, plus lookalike decoys from the same list
+  const vWords = [];
+  if (cfg.mode === "vedant") {
+    const want = teams.length + vedantDecoys(L), usedT = new Set();
+    for (const w of shuffle(VEDANT.slice(), rng)) {
+      if (vWords.length >= want) break;
+      const tk = tokens(w);
+      if (tk.some(t => usedT.has(t))) continue;
+      tk.forEach(t => usedT.add(t)); vWords.push(w);
+    }
+  }
+  const n = L.size - vWords.length;
   let words;
   if (cfg.mode === "spicy") {
     const spicy = poolFor("spicy", cfg.packsS), set = new Set(spicy);
     const everyday = Array.from(new Set(WORDS.classic)).filter(w => !set.has(w)).sort();
-    words = pickWords(rng, spicy, everyday, Math.round(cfg.mix / 25 * L.size), L.size, CLUSTER_S, capS);
+    words = pickWords(rng, spicy, everyday, Math.round(cfg.mix / 25 * n), n, CLUSTER_S, capS, vWords);
   } else {
     const all = poolFor("general", cfg.packsG);
     if (cfg.packsG.includes("double")) {
       // Double-meaning words make the best clues, so they get a guaranteed share of every board.
       const dbl = Array.from(new Set(WORDS_G.double)).sort(), dset = new Set(dbl);
-      words = pickWords(rng, dbl, all.filter(w => !dset.has(w)), Math.round(DOUBLE_SHARE * L.size), L.size, CLUSTER_G, capG);
+      words = pickWords(rng, dbl, all.filter(w => !dset.has(w)), Math.round(DOUBLE_SHARE * n), n, CLUSTER_G, capG, vWords);
     } else {
-      words = pickWords(rng, all, [], L.size, L.size, CLUSTER_G, capG);
+      words = pickWords(rng, all, [], n, n, CLUSTER_G, capG, vWords);
     }
   }
-  const teams = TEAMS.slice(0, cfg.teams);
-  const si = (rot + seq - 1) % teams.length;
-  const order = teams.slice(si).concat(teams.slice(0, si));
   const colors = [];
   order.forEach((t, k) => { for (let j = 0; j < (k === 0 ? L.start : L.other); j++) colors.push(t); });
   for (let j = 0; j < L.neutral; j++) colors.push("neutral");
   for (let j = 0; j < L.assassins; j++) colors.push("assassin");
   shuffle(colors, rng);
-  return { seq, mode: cfg.mode, cols: L.cols, size: L.size, assassins: L.assassins, words, colors, teams, order,
-    turn: order[0], revealed: Array(L.size).fill(false), out: {}, winner: null, reason: "", history: [], last: null };
+
+  const board = Array(L.size).fill(null), vedant = [];
+  if (vWords.length) {
+    let vi = 0;
+    order.forEach(t => {
+      const spots = colors.map((c, i) => (c === t && board[i] === null ? i : -1)).filter(i => i >= 0);
+      const at = spots[Math.floor(rng() * spots.length)];
+      board[at] = vWords[vi++]; vedant.push(at);
+    });
+    // decoys land anywhere except black tiles
+    const free = shuffle(colors.map((c, i) => (c !== "assassin" && board[i] === null ? i : -1)).filter(i => i >= 0), rng);
+    while (vi < vWords.length && free.length) board[free.pop()] = vWords[vi++];
+  }
+  let wi = 0;
+  for (let i = 0; i < L.size; i++) if (board[i] === null) board[i] = words[wi++];
+  return { seq, mode: cfg.mode, cols: L.cols, size: L.size, assassins: L.assassins, words: board, colors, teams, order,
+    turn: order[0], revealed: Array(L.size).fill(false), out: {}, winner: null, reason: "", history: [], last: null,
+    vedant, powers: {}, skip: {}, spin: null, dare: null };
 }
+const vedantDecoys = L => (L.cols === 5 ? 2 : 3);
 
 // ---------- shared room data (Firebase drops empty values and may return arrays as objects) ----------
 function toArr(x, n, fill) {
@@ -620,11 +740,14 @@ function normRoom(r) {
   const words = toArr(g.words);
   const size = g.size || words.length;
   const game = {
-    seq: g.seq || 1, mode: g.mode === "spicy" ? "spicy" : "general", cols: g.cols || 5, size, assassins: g.assassins || 0,
+    seq: g.seq || 1, mode: ["spicy", "vedant"].includes(g.mode) ? g.mode : "general", cols: g.cols || 5, size, assassins: g.assassins || 0,
     words: toArr(g.words, size, ""), colors: toArr(g.colors, size, "neutral"), teams: toArr(g.teams), order: toArr(g.order),
     turn: g.turn || "red", revealed: toArr(g.revealed, size, false), out: g.out || {}, winner: g.winner || null, reason: g.reason || "",
-    history: toArr(g.history).filter(Boolean).map(h => ({ turn: h.turn, revealed: toArr(h.revealed, size, false), out: h.out || {}, winner: h.winner || null, reason: h.reason || "" })),
-    last: g.last || null
+    history: toArr(g.history).filter(Boolean).map(h => ({ turn: h.turn, revealed: toArr(h.revealed, size, false), out: h.out || {}, winner: h.winner || null, reason: h.reason || "",
+      powers: h.powers || {}, skip: h.skip || {}, spin: h.spin || null, dare: h.dare || null })),
+    last: g.last || null,
+    vedant: toArr(g.vedant).filter(x => x !== null && x !== undefined).map(Number),
+    powers: g.powers || {}, skip: g.skip || {}, spin: g.spin || null, dare: g.dare || null
   };
   return { cfg: sanitize(r.cfg), rot: r.rot || 0, created: r.created || 0, game };
 }
@@ -680,9 +803,12 @@ const winShown = {};
 
 function cleanName(s) { return String(s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
 function randomName(mode) {
-  const spicy = mode === "spicy";
-  const a = spicy ? ["velvet","naughty","steamy","cheeky","sultry","frisky","wicked","silky","sticky","spicy","tipsy","saucy"] : ["brave","silent","golden","lucky","rapid","secret","clever","hidden","cosmic","bold","quiet","swift"];
-  const n = spicy ? ["peach","cherry","kiss","tango","martini","garter","rose","flame","lace","tequila","honey","cuffs"] : ["falcon","comet","otter","harbor","maple","rocket","tiger","lantern","pebble","atlas","panda","river"];
+  const NAMES = {
+    spicy: [["velvet","naughty","steamy","cheeky","sultry","frisky","wicked","silky","sticky","spicy","tipsy","saucy"], ["peach","cherry","kiss","tango","martini","garter","rose","flame","lace","tequila","honey","cuffs"]],
+    vedant: [["hungry","mighty","legendary","super","epic","golden","unstoppable","fearless","turbo","shredded","bottomless","birthday"], ["ramen","saiyan","buffet","ninja","pirate","titan","gains","hokage","dumbbell","feast","rasengan","protein"]],
+    general: [["brave","silent","golden","lucky","rapid","secret","clever","hidden","cosmic","bold","quiet","swift"], ["falcon","comet","otter","harbor","maple","rocket","tiger","lantern","pebble","atlas","panda","river"]]
+  };
+  const [a, n] = NAMES[mode] || NAMES.general;
   const r = Math.random;
   return a[Math.floor(r() * a.length)] + "-" + n[Math.floor(r() * n.length)] + "-" + (10 + Math.floor(r() * 90));
 }
@@ -696,8 +822,35 @@ function nextTeam(g, t) {
   return t;
 }
 function snap(g) {
-  g.history.push({ turn: g.turn, revealed: g.revealed.slice(), out: Object.assign({}, g.out), winner: g.winner, reason: g.reason });
+  g.history.push({ turn: g.turn, revealed: g.revealed.slice(), out: Object.assign({}, g.out), winner: g.winner, reason: g.reason,
+    powers: clean(g.powers), skip: Object.assign({}, g.skip), spin: g.spin ? clean(g.spin) : null, dare: g.dare ? clean(g.dare) : null });
   if (g.history.length > 30) g.history.shift();
+}
+// Hands the turn on: one-turn powers of the team that just played expire, teams owing a skip sit out,
+// and a power waiting for the incoming team switches on.
+function passTurn(g, from) {
+  const p = g.powers[from];
+  if (p && p.state === "active") delete g.powers[from];
+  let next = nextTeam(g, from), guard = 0;
+  const notes = [];
+  while (g.skip[next] > 0 && guard++ < 8) {
+    g.skip[next]--; if (!g.skip[next]) delete g.skip[next];
+    notes.push(cap(next) + " sits this turn out.");
+    const after = nextTeam(g, next);
+    if (after === next) break;
+    next = after;
+  }
+  g.turn = next;
+  const q = g.powers[next];
+  if (q && q.state === "queued") q.state = "active";
+  return notes.join(" ");
+}
+function makeDare(g, team, cfg) {
+  const k = g.colors.reduce((n, c, j) => n + (c === team && g.revealed[j] ? 1 : 0), 0);
+  let t = DARES[Math.floor(Math.random() * DARES.length)];
+  if (t === "{PUSHUPS}") t = "Do " + Math.max(1, k) * 3 + " pushups: " + k + " word" + (k === 1 ? "" : "s") + " your team has guessed × 3" + (k === 0 ? " (minimum 3)" : "") + ". You can hand them to a teammate.";
+  if (g.mode === "spicy" && cfg.penalties) t += " Or take a shot.";
+  return t;
 }
 
 // Every shared change runs as a transaction on the room, so two people tapping at once can't clobber each other.
@@ -716,40 +869,54 @@ function reveal(i) {
   if (spy || !R) return;
   const seq = R.game.seq;
   if (R.game.winner || R.game.revealed[i]) return;
+  if (R.game.spin && !R.game.spin.result) { toast("Spin the power wheel first!"); spinClosedId = null; renderVedant(); return; }
   const id = rid();
   act(r => {
     const g = r.game, cfg = r.cfg;
-    if (g.seq !== seq || g.winner || g.revealed[i]) return false;
+    if (g.seq !== seq || g.winner || g.revealed[i] || (g.spin && !g.spin.result)) return false;
     snap(g);
     g.revealed[i] = true;
     const c = g.colors[i], team = g.turn, word = g.words[i];
+    const isV = g.vedant.includes(i);
+    const pw = g.powers[team];
     const party = g.mode === "spicy" && cfg.penalties;
     const story = g.mode === "spicy" && cfg.stories && STORY.has(word) && c !== "assassin"
       ? " Story time: whoever tapped it tells their “" + word + "” story, or drinks." : "";
     let kind, msg = "", long = !!story;
     if (c === "assassin") {
       kind = "boom";
-      g.out[team] = true;
-      const rest = activeTeams(g);
-      if (rest.length <= 1) {
-        g.winner = rest[0] || nextTeam(g, team);
-        g.reason = cap(team) + " hit the assassin on “" + word + "”." + (g.order.length > 2 ? " " + cap(g.winner) + " is the last team standing." : "") + (party ? " " + cap(team) + " finishes their drinks." : "");
-      } else {
-        g.turn = nextTeam(g, team);
-        msg = cap(team) + " hit an assassin and is out! " + cap(g.turn) + "'s turn." + (party ? " " + cap(team) + ", finish your drinks." : "");
+      if (pw && pw.type === "comeback") {
+        delete g.powers[team];
+        g.skip[team] = (g.skip[team] || 0) + 1;
+        const note = passTurn(g, team);
+        msg = "Saiyan Comeback! " + cap(team) + " survives the black tile but sits out their next turn. " + (note ? note + " " : "") + cap(g.turn) + "'s turn.";
         long = true;
+      } else {
+        g.out[team] = true;
+        delete g.powers[team];
+        const rest = activeTeams(g);
+        if (rest.length <= 1) {
+          g.winner = rest[0] || nextTeam(g, team);
+          g.reason = cap(team) + " hit the assassin on “" + word + "”." + (g.order.length > 2 ? " " + cap(g.winner) + " is the last team standing." : "") + (party ? " " + cap(team) + " finishes their drinks." : "");
+        } else {
+          const note = passTurn(g, team);
+          msg = cap(team) + " hit an assassin and is out! " + (note ? note + " " : "") + cap(g.turn) + "'s turn." + (party ? " " + cap(team) + ", finish your drinks." : "");
+          long = true;
+        }
       }
-    } else if (c === "neutral") {
-      kind = "neutral";
-      g.turn = nextTeam(g, team);
-      msg = "Bystander. " + cap(g.turn) + "'s turn." + story;
-    } else if (c !== team) {
-      kind = "bad";
-      g.turn = nextTeam(g, team);
-      msg = (party ? "Wrong team! Whoever tapped it takes a sip. " : "That was " + cap(c) + "'s word. ") + cap(g.turn) + "'s turn." + story;
-    } else {
+    } else if (c === team) {
       kind = "good";
       msg = story.trim();
+    } else {
+      kind = c === "neutral" ? "neutral" : "bad";
+      if (pw && pw.type === "cheat" && pw.state === "active") {
+        delete g.powers[team];
+        msg = "Cheat Day! That slip doesn't count, so " + cap(team) + " keeps guessing." + (c !== "neutral" ? " " + cap(c) + " still gets the word." : "") + story;
+        long = true;
+      } else {
+        const note = passTurn(g, team);
+        msg = (c === "neutral" ? "Bystander. " : (party ? "Wrong team! Whoever tapped it takes a sip. " : "That was " + cap(c) + "'s word. ")) + (note ? note + " " : "") + cap(g.turn) + "'s turn." + story;
+      }
     }
     if (!g.winner) {
       for (const t of g.order) {
@@ -762,18 +929,35 @@ function reveal(i) {
       }
     }
     if (g.winner) msg = "";
-    g.last = { id, i, kind, team, owner: c, msg, long };
+    if (isV && c !== "assassin" && c !== "neutral") {
+      if (c === team) { if (!g.winner) { g.spin = { id, team, word, result: null }; msg = ""; } }
+      else g.dare = { id, team, owner: c, word, text: makeDare(g, team, cfg) };
+    }
+    g.last = { id, i, kind, team, owner: c, msg, long, vedant: isV };
   });
 }
 function endTurn() {
   if (!R || R.game.winner) return;
+  if (R.game.spin && !R.game.spin.result) { toast("Spin the power wheel first!"); spinClosedId = null; renderVedant(); return; }
   const seq = R.game.seq, turn = R.game.turn, id = rid();
   act(r => {
     const g = r.game;
-    if (g.seq !== seq || g.winner || g.turn !== turn) return false;
+    if (g.seq !== seq || g.winner || g.turn !== turn || (g.spin && !g.spin.result)) return false;
     snap(g);
-    g.turn = nextTeam(g, turn);
-    g.last = { id, kind: "pass", msg: cap(turn) + " ended their turn. " + cap(g.turn) + "'s turn." };
+    const note = passTurn(g, turn);
+    g.last = { id, kind: "pass", msg: cap(turn) + " ended their turn. " + (note ? note + " " : "") + cap(g.turn) + "'s turn." };
+  });
+}
+function spinWheel() {
+  if (!R || !R.game.spin || R.game.spin.result) return;
+  const sid = R.game.spin.id, seq = R.game.seq;
+  $("spinBtn").disabled = true;
+  act(r => {
+    const g = r.game;
+    if (g.seq !== seq || !g.spin || g.spin.id !== sid || g.spin.result) return false;
+    const p = POWERS[Math.floor(Math.random() * POWERS.length)];
+    g.spin.result = p.key;
+    g.powers[g.spin.team] = { type: p.key, state: p.key === "comeback" ? "held" : "queued" };
   });
 }
 function undo() {
@@ -784,6 +968,7 @@ function undo() {
     if (g.seq !== seq || !g.history.length) return false;
     const h = g.history.pop();
     g.turn = h.turn; g.revealed = h.revealed; g.out = h.out || {}; g.winner = h.winner || null; g.reason = h.reason || "";
+    g.powers = h.powers || {}; g.skip = h.skip || {}; g.spin = h.spin || null; g.dare = h.dare || null;
     g.last = { id, kind: "undo", msg: "Last move undone. " + cap(g.turn) + "'s turn." };
   });
 }
@@ -816,8 +1001,7 @@ function showLobby() {
   roomId = null; R = null;
   $("overlay").hidden = true;
   $("lobby").hidden = false; $("roomUI").hidden = true; $("roomForm").hidden = true;
-  document.body.classList.toggle("spicy", localPrefs.mode === "spicy");
-  $("modeTag").textContent = localPrefs.mode === "spicy" ? "After Dark" : "Classic";
+  applyModeLook(localPrefs.mode);
   $("stripe").style.background = "var(--accent)";
   document.querySelectorAll("#lobbyMode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === localPrefs.mode)));
   document.title = "Codenames";
@@ -862,20 +1046,86 @@ function onRoom(raw) {
   draft.penalties = r.cfg.penalties; draft.stories = r.cfg.stories;
   if (prev && prev.seq !== g.seq) {
     $("overlay").hidden = true;
-    toast("New board dealt. " + cap(g.order[0]) + " goes first.");
+    toast("New board dealt. " + cap(g.order[0]) + " goes first." + (g.vedant.length ? " Every team has one hidden Vedant word!" : ""), g.vedant.length > 0);
   }
+  let vDelay = 0;
   if (g.last && g.last.id !== lastSeen) {
     if (!firstLoad) {
       const L = g.last;
-      if (["good", "bad", "neutral", "boom"].includes(L.kind) && prev && prev.seq === g.seq && !prev.revealed[L.i] && g.revealed[L.i]) pendingAnim = L;
+      if (["good", "bad", "neutral", "boom"].includes(L.kind) && prev && prev.seq === g.seq && !prev.revealed[L.i] && g.revealed[L.i]) { pendingAnim = L; if (L.vedant) vDelay = 1000; }
       if (L.msg) toast(L.msg, L.long);
     }
     lastSeen = g.last.id;
   }
+  if (firstLoad) {
+    // don't replay old pop-ups for someone joining mid-game
+    if (g.dare) dareClosedId = g.dare.id;
+    if (g.spin && g.spin.result) { spinClosedId = g.spin.id; spinAnimId = g.spin.id; }
+  }
   if (!g.winner) $("overlay").hidden = true;
   render();
   renderSetup();
+  clearTimeout(vTimer);
+  if (vDelay) vTimer = setTimeout(renderVedant, vDelay); else renderVedant();
   firstLoad = false;
+}
+
+// ---------- Vedant pop-ups: power wheel and dares ----------
+let spinClosedId = null, spinAnimId = null, dareClosedId = null, vTimer = null;
+function buildPowerList(highlight) {
+  const ul = $("plist"); ul.innerHTML = "";
+  POWERS.forEach(p => {
+    const li = document.createElement("li");
+    if (highlight === p.key) li.className = "win";
+    const sw = document.createElement("i"); sw.style.background = "var(" + p.color + ")";
+    const tx = document.createElement("span");
+    const b = document.createElement("b"); b.textContent = p.name + ": ";
+    tx.appendChild(b); tx.appendChild(document.createTextNode(p.desc));
+    li.appendChild(sw); li.appendChild(tx); ul.appendChild(li);
+  });
+}
+function renderVedant() {
+  if (!R) return;
+  const g = R.game, s = g.spin, d = g.dare;
+  // power wheel
+  const so = $("spinOverlay");
+  if (s && s.id !== spinClosedId) {
+    $("spinTitle").textContent = cap(s.team) + " found it!";
+    $("spinTitle").className = "t-" + s.team;
+    $("spinText").textContent = "“" + s.word + "” was " + cap(s.team) + "'s hidden Vedant word. Spin the wheel to win a power for your team.";
+    const wheel = $("wheel");
+    if (!s.result) {
+      if (spinAnimId !== s.id) { wheel.style.transition = "none"; wheel.style.transform = "rotate(0deg)"; void wheel.offsetWidth; wheel.style.transition = ""; }
+      buildPowerList(null);
+      $("spinBtn").hidden = false; $("spinBtn").disabled = false;
+      $("spinClose").hidden = true; $("spinResult").hidden = true;
+    } else if (spinAnimId !== s.id) {
+      spinAnimId = s.id;
+      const k = POWERS.findIndex(p => p.key === s.result);
+      const center = k * 120 + 60, jitter = Math.random() * 70 - 35;
+      $("spinBtn").hidden = true; $("spinClose").hidden = true; $("spinResult").hidden = true;
+      buildPowerList(null);
+      const done = () => {
+        const p = powerOf(s.result);
+        $("spinResult").textContent = cap(s.team) + " wins " + p.name + "! " + p.desc;
+        $("spinResult").hidden = false; $("spinClose").hidden = false;
+        buildPowerList(p.key);
+        if (!reduceMotion()) { const r = wheel.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, [cssVar("--" + s.team), cssVar(p.color), cssVar("--gold")], 60, 9); }
+      };
+      if (reduceMotion()) { wheel.style.transition = "none"; wheel.style.transform = "rotate(" + (360 - center) + "deg)"; done(); }
+      else { requestAnimationFrame(() => { wheel.style.transform = "rotate(" + (360 * 6 + 360 - center + jitter) + "deg)"; }); setTimeout(done, 3500); }
+    }
+    so.hidden = false;
+  } else so.hidden = true;
+  // dare
+  const dov = $("dareOverlay");
+  if (d && d.id !== dareClosedId) {
+    $("dareTitle").textContent = cap(d.team) + ", dare time!";
+    $("dareTitle").className = "t-" + d.team;
+    $("dareIntro").textContent = "“" + d.word + "” was " + cap(d.owner) + "'s hidden Vedant word, not yours. Whoever tapped it:";
+    $("dareText").textContent = d.text;
+    dov.hidden = false;
+  } else dov.hidden = true;
 }
 
 let toastTimer;
@@ -953,8 +1203,7 @@ function animate(a) {
 function render() {
   if (!R) return;
   const g = R.game, board = $("board");
-  document.body.classList.toggle("spicy", g.mode === "spicy");
-  $("modeTag").textContent = g.mode === "spicy" ? "After Dark" : "Classic";
+  applyModeLook(g.mode);
   board.classList.toggle("spy", spy);
   board.classList.toggle("wide", g.cols === 6);
   board.style.gridTemplateColumns = "repeat(" + g.cols + ", minmax(0, 1fr))";
@@ -974,8 +1223,27 @@ function render() {
     b.querySelector(".w").textContent = w;
     if (spy || g.revealed[i] || g.winner) b.dataset.c = g.colors[i]; else delete b.dataset.c;
     b.classList.toggle("revealed", !!g.revealed[i]);
-    b.setAttribute("aria-label", w + (g.revealed[i] || spy ? ", " + label(g.colors[i]) : ""));
+    // spymasters see where the hidden Vedant words are; everyone sees them once revealed or at game end
+    const isV = g.vedant.includes(i), showV = isV && (spy || g.revealed[i] || !!g.winner);
+    let vm = b.querySelector(".vmark");
+    if (showV && !vm) { vm = document.createElement("span"); vm.className = "vmark"; vm.textContent = "V"; vm.title = "Vedant word"; b.appendChild(vm); }
+    else if (!showV && vm) vm.remove();
+    b.setAttribute("aria-label", w + (g.revealed[i] || spy ? ", " + label(g.colors[i]) : "") + (showV ? ", Vedant word" : ""));
   }
+  // active powers and skips
+  const pl = $("powerLine"); pl.innerHTML = "";
+  g.teams.forEach(t => {
+    const p = g.powers[t];
+    if (p && !g.out[t]) {
+      const P = powerOf(p.type), chip = document.createElement("span");
+      chip.className = "chip t-" + t;
+      const when = p.state === "held" ? "until used" : p.state === "active" ? (P.key === "superset" ? "two-word clue now" : "active now") : "next turn";
+      chip.textContent = cap(t) + ": " + P.name + " (" + when + ")";
+      pl.appendChild(chip);
+    }
+    if (g.skip[t]) { const chip = document.createElement("span"); chip.className = "chip t-" + t; chip.textContent = cap(t) + " sits out next turn"; pl.appendChild(chip); }
+  });
+  pl.hidden = !pl.children.length || !!g.winner;
   const sc = $("score"); sc.innerHTML = "";
   g.teams.forEach((t, k) => {
     if (k) { const d = document.createElement("span"); d.className = "dash"; d.textContent = "–"; sc.appendChild(d); }
@@ -996,9 +1264,11 @@ function render() {
   $("undo").disabled = g.history.length === 0;
   $("viewPlayer").setAttribute("aria-pressed", String(!spy));
   $("viewSpy").setAttribute("aria-pressed", String(spy));
+  const vOn = g.vedant.length > 0;
   $("hint").textContent = spy
-    ? "Spymaster view: tapping is off on this device. Don't let your team see this screen!"
-    : "Tap a word to guess. Everyone in the room sees it instantly.";
+    ? "Spymaster view: tapping is off on this device. Don't let your team see this screen!" + (vOn ? " A gold V marks each team's hidden Vedant word. Lookalike words without a V are decoys." : "")
+    : vOn ? "Every team has one hidden Vedant word. Find yours and spin for a power. Find another team's and you owe a dare."
+          : "Tap a word to guess. Everyone in the room sees it instantly.";
   $("roomLink").value = location.href.split("#")[0] + "#" + roomId;
 
   let animated = false;
@@ -1047,7 +1317,8 @@ function renderSetup() {
   const L = layoutFor(d.teams, d.assassins);
   $("layoutLine").textContent = L.cols + "×" + L.rows + " board (" + L.size + " words). Starting team gets " + L.start + ", " + (d.teams === 2 ? "the other team gets " : "each other team gets ") + L.other + ". " +
     L.assassins + " black tile" + (L.assassins === 1 ? "" : "s") + ", " + L.neutral + " bystanders." +
-    (d.teams > 2 ? " Hitting a black tile knocks that team out." : " Hitting a black tile loses the game.");
+    (d.teams > 2 ? " Hitting a black tile knocks that team out." : " Hitting a black tile loses the game.") +
+    (d.mode === "vedant" ? " Includes " + d.teams + " hidden Vedant words and " + vedantDecoys(L) + " lookalikes." : "");
   $("balanceLine").textContent = spicyMode
     ? "Boards are balanced automatically: at most 2 words from any theme (drinks, underwear, toys, body parts…), no two words that share a root like Booty and Booty Call, and only one vague word like Naughty or Horny."
     : "Boards are balanced automatically: at most 3 words from any category (animals, food, space…) and no two words that share a root." + (d.packsG.includes("double") ? " With Double Meaning on, about a quarter of each board is double-meaning words." : "");
@@ -1109,6 +1380,9 @@ $("assMinus").addEventListener("click", () => { if (draft && draft.assassins > 0
 $("assPlus").addEventListener("click", () => { if (draft && draft.assassins < MAX_ASSASSINS) { draft.assassins++; editDraft(); } });
 $("mix").addEventListener("change", e => { if (draft) { draft.mix = Number(e.target.value); editDraft(); } });
 $("deal").addEventListener("click", dealWithDraft);
+$("spinBtn").addEventListener("click", spinWheel);
+$("spinClose").addEventListener("click", () => { if (R && R.game.spin) spinClosedId = R.game.spin.id; $("spinOverlay").hidden = true; });
+$("dareDone").addEventListener("click", () => { if (R && R.game.dare) dareClosedId = R.game.dare.id; $("dareOverlay").hidden = true; });
 $("penalties").addEventListener("change", e => setRoomToggle("penalties", e.target.checked));
 $("stories").addEventListener("change", e => setRoomToggle("stories", e.target.checked));
 $("copyRoom").addEventListener("click", () => {
