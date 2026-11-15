@@ -375,7 +375,11 @@ const GENERAL = {
     objects: ["Pen","Pencil","Paper","Book","Envelope","Stamp","Ring","Watch","Wallet","Umbrella","Glasses","Bottle","Cup","Plate","Fork","Knife","Needle","Button","Zipper","Rope","Chain","Magnet","Battery","Balloon","Kite","Brush","Comb","Soap","Scissors","Glue","Box","Bag","Map","Mirror","Coin"],
     food: ["Apple","Banana","Orange","Lemon","Grape","Cherry","Peach","Pear","Melon","Carrot","Potato","Onion","Garlic","Corn","Bean","Bread","Cheese","Butter","Egg","Honey","Pie","Cake","Cookie","Pizza","Burger","Taco","Noodle","Rice","Soup","Pepper","Salt","Sugar","Chocolate","Coffee","Tea","Milk"],
     jobs: ["Doctor","Nurse","Teacher","Pilot","Chef","Farmer","Lawyer","Judge","Police","Soldier","Sailor","Captain","Painter","Singer","Dancer","Actor","Banker","Plumber","Mechanic","Baker","Butcher","Barber","Waiter","Driver","Miner","Spy","Detective","Scientist","Astronaut","Firefighter"],
-    clothes: ["Hat","Crown","Boot","Shoe","Sock","Glove","Scarf","Belt","Tie","Jacket","Coat","Dress","Shirt","Skirt","Mask","Helmet","Cape","Apron","Pocket","Collar","Uniform","Pajamas","Sweater","Sandal"]
+    clothes: ["Hat","Crown","Boot","Shoe","Sock","Glove","Scarf","Belt","Tie","Jacket","Coat","Dress","Shirt","Skirt","Mask","Helmet","Cape","Apron","Pocket","Collar","Uniform","Pajamas","Sweater","Sandal"],
+    body: ["Hand","Eye","Nose","Ear","Mouth","Tooth","Tongue","Hair","Knee","Elbow","Shoulder","Thumb","Finger","Wrist","Ankle","Neck","Belly","Skin","Muscle","Rib","Skull","Spine","Lip","Cheek","Chin","Eyebrow","Fist","Heel","Knuckle","Freckle"],
+    health: ["Fever","Pill","Bandage","Vaccine","Pulse","Cough","Sneeze","Allergy","Vitamin","Diet","Dentist","Crutch","Stretcher","Syringe","Thermometer","Stethoscope","X-Ray","Surgery","Medicine","Hiccup","Yawn","Sweat","Scar","Bruise","Blister","Clinic","Therapy","Pharmacy","Wheelchair","Braces"],
+    dishes: ["Pasta","Sushi","Curry","Steak","Salad","Sandwich","Pancake","Waffle","Omelet","Dumpling","Burrito","Kebab","Lasagna","Stew","Pretzel","Bagel","Croissant","Muffin","Donut","Cupcake","Pudding","Jelly","Yogurt","Cereal","Bacon","Ham","Meatball","Fries","Nachos","Popsicle"],
+    pantry: ["Lemonade","Soda","Water","Cocktail","Smoothie","Cocoa","Espresso","Vanilla","Cinnamon","Ginger","Mustard","Ketchup","Vinegar","Olive","Mushroom","Tomato","Avocado","Coconut","Pineapple","Strawberry","Blueberry","Peanut","Almond","Walnut","Pumpkin","Cabbage","Broccoli","Spinach","Flour","Syrup"]
   },
   world: {
     places: ["School","Hospital","Church","Library","Museum","Bank","Hotel","Airport","Station","Prison","Castle","Palace","Tower","Bridge","Tunnel","Market","Factory","Farm","Stadium","Theater","Cinema","Zoo","Park","Harbor","Lighthouse","Temple","Pyramid","Embassy","Casino","Restaurant"],
@@ -395,14 +399,52 @@ const GENERAL = {
     showbiz: ["Movie","Circus","Clown","Magician","Juggler","Puppet","Comic","Cartoon","Hero","Villain","Party","Concert","Opera","Ballet","Ticket","Award","Trophy","Medal","Stage","Costume","Director","Studio","Popcorn","Red Carpet","Premiere","Sequel","Celebrity","Fan"],
     sports: ["Football","Soccer","Baseball","Basketball","Tennis","Golf","Boxing","Hockey","Chess","Poker","Dice","Card","Puzzle","Lottery","Marathon","Olympics","Goal","Net","Racket","Ball","Referee","Coach","Team","Skate","Surf","Ski","Dart","Bowling","Karate","Wrestling"],
     music: ["Piano","Guitar","Drum","Violin","Trumpet","Flute","Harp","Bell","Whistle","Horn","Organ","Band","Choir","Song","Note","Rhythm","Jazz","Rock","Disco","Banjo","Cello","Saxophone","Tuba","Lullaby","Anthem","Melody","DJ","Karaoke"]
+  },
+  double: {
+    dm_animals: ["Bat","Mouse","Mole","Seal","Crane","Duck","Calf","Kid","Bear","Turkey","Kiwi","Pike","Bass","Swallow","Fly","Bug","Buck","Hound","Ram","Pupil","Jaguar","Python","Viper","Mustang"],
+    dm_nature_food: ["Spring","Bark","Palm","Plant","Root","Shell","Wave","Well","Log","Stick","Mint","Sage","Date","Orange","Jam","Toast","Pot","Pan","Bowl","Punch","Fall","Current","Bay","Branch","Trunk","Leaves","Pepper","Nut","Squash","Chip"],
+    dm_games: ["Pitch","Match","Club","Court","Draw","Deck","Jack","Spade","Diamond","Ring","Round","Lap","Pool","Racket","Cap","Pitcher","Slide","Switch","Pick","Score","Hit","Bowler","Coach","Volley","Set","Serve","Tag","Puck","Kite","Hook"],
+    dm_money_office: ["Bank","Bill","Check","Pound","Capital","Change","Fine","File","Letter","Note","Post","Press","Stamp","Draft","Figure","Count","Case","Staff","Ruler","Scale","Line","Plot","Novel","Story","Volume","Present","Model","Sign","Square","Mass"],
+    dm_everyday: ["Light","Port","Yard","Shed","Row","Stern","Hatch","Tank","Mine","March","Tear","Lie","Rest","Trip","Rush","Cross","Kind","Rare","Flat","Lead","Cast","Box","Key","Lock","Range","Screen","Sink","Shower","Iron","Organ","Suit","Tie","Watch","Glasses","Chest","Foot","Sole","Temple","Patient","Second","Bolt","Fan","Pen","Bow","Trunk","Wind","Spirit","Jumper","Grave","Cell"]
+  },
+  action: {
+    moves: ["Charge","Strike","Drop","Run","Jump","Swim","Climb","Dive","Float","Spin","Throw","Catch","Kick","Push","Pull","Crawl","Bounce","Roll","Sail","Ride","Race","Wander","Slip","Skip","Leap","Dash","Sprint","Drift","Glide","Tumble"],
+    deeds: ["Break","Build","Burn","Melt","Freeze","Grow","Hide","Seek","Steal","Chase","Escape","Fight","Laugh","Scream","Whisper","Dream","Hunt","Cook","Bake","Boil","Pour","Shake","Wrap","Cut","Fold","Crash","Explode","Shine","Glow","Blink","Knock","Win","Lose","Shoot","Aim","Bet","Trade","Borrow","Vote","Travel","Dig","Bury","Carry","Lift","Juggle","Hug","Point","Follow","Guard","Rescue"],
+    feel: ["Sharp","Cold","Hot","Soft","Hard","Sweet","Sour","Bitter","Bright","Dark","Loud","Quiet","Smooth","Rough","Sticky","Salty","Wet","Dry","Fresh","Rotten","Frozen","Hollow","Solid","Liquid","Electric","Spicy","Crisp","Fuzzy","Slimy","Shiny"],
+    traits: ["Fast","Slow","Heavy","Empty","Full","Rich","Poor","Old","Young","Ancient","Modern","Wild","Calm","Brave","Lazy","Lucky","Happy","Angry","Shy","Proud","Smart","Crazy","Strange","Golden","Tiny","Huge","Thin","Thick","Deep","High","Low","Long","Short","Royal","Evil","Noble","Fake","Real","Broken","Lost","Free","Blind","Silent","Invisible","Fancy","Plain","Wise","Clumsy","Grumpy","Sleepy"]
+  },
+  abstract: {
+    feelings: ["Love","Hate","Fear","Hope","Joy","Anger","Envy","Greed","Doubt","Panic","Pride","Shame","Guilt","Boredom","Courage","Nostalgia","Jealousy","Wonder"],
+    ideas: ["Time","Trust","Chaos","Truth","Justice","Freedom","Peace","Logic","Theory","Idea","Memory","Silence","Echo","Shadow","Infinity","Zero","Order","Law","Habit","Pattern","Mystery","Myth","Riddle","Joke","Rumor","Secret","Promise","Debt","Legacy","Origin"],
+    fate: ["Luck","Fate","Destiny","Karma","Chance","Risk","Danger","Glory","Honor","Power","Fame","Wealth","Beauty","Wisdom","Victory","Defeat","Wish","Nightmare","Future","Past","Soul","Mind","Instinct","Faith","Miracle","Curse","Oath","Prophecy","Fortune","Doom"],
+    world: ["Limit","Edge","Center","Void","Noise","Taste","Touch","Sense","Mood","Balance","Gravity","Energy","Speed","Distance","Weight","Size","Shape","Color","Space","Season","Dawn","Dusk","Midnight","Weekend","Birthday","Holiday","Century","Moment","Deadline","Tomorrow"]
+  },
+  spy: {
+    spy: ["Agent","Cipher","Vault","Decoy","Bug","Wire","Mole","Code","Disguise","Wiretap","Radar","Sonar","Mission","Target","Signal","Morse","Briefcase","Microfilm","Safehouse","Handler","Informant","Codename","Gadget","Satellite","Surveillance","Passport","Embassy","Defector","Blackmail","Sleeper"],
+    crime: ["Alibi","Clue","Witness","Suspect","Heist","Ransom","Hostage","Fingerprint","Badge","Handcuffs","Prison","Warden","Bandit","Thief","Smuggler","Gangster","Mafia","Sheriff","Marshal","Bounty","Getaway","Poison","Forgery","Jury","Verdict","Lawyer","Mugshot","Lineup","Evidence","Crowbar"],
+    military: ["Bunker","Missile","Grenade","Rifle","Pistol","Bullet","Sniper","Tank","General","Colonel","Sergeant","Admiral","Medal","Camouflage","Ambush","Siege","Fortress","Trench","Parachute","Helicopter","Submarine","Radio","Compass","Flare","Barracks","Cadet","Drill","Salute","Armor","Torpedo"]
+  },
+  icons: {
+    minds: ["Einstein","Newton","Darwin","Edison","Tesla","Galileo","Curie","Pythagoras","Socrates","Plato","Archimedes","Copernicus","Hippocrates","Freud","Nobel"],
+    artists: ["Shakespeare","Mozart","Beethoven","Picasso","Da Vinci","Van Gogh","Michelangelo","Rembrandt","Bach","Homer","Dickens","Tolstoy","Houdini","Aesop","Monet"],
+    rulers: ["Cleopatra","Caesar","Napoleon","Columbus","Lincoln","Gandhi","Genghis Khan","Joan of Arc","Marco Polo","Tutankhamun","Alexander","Attila","Spartacus","Magellan","Gagarin"],
+    legends: ["Sherlock","Dracula","Frankenstein","Robin Hood","King Arthur","Merlin","Hercules","Zeus","Thor","Achilles","Medusa","Cinderella","Pinocchio","Peter Pan","Alice","Tarzan","Romeo","Hamlet","Santa","Pandora","Odysseus","Aladdin","Sinbad","Rapunzel","Gulliver"],
+    landmarks: ["Mona Lisa","Eiffel Tower","Big Ben","Colosseum","Stonehenge","Taj Mahal","Great Wall","Statue of Liberty","Titanic","Atlantis","Olympus","Excalibur","Holy Grail","Trojan Horse","Sphinx","Parthenon","Kremlin","Machu Picchu","Niagara","Grand Canyon"]
   }
 };
 const PACKS_G = [
-  { id: "everyday", code: "e", name: "Everyday", heat: "Core", desc: "Home, objects, food, jobs, clothes" },
+  { id: "everyday", code: "e", name: "Everyday", heat: "Core", desc: "Home, objects, food, dishes, body, health, jobs, clothes" },
   { id: "world", code: "o", name: "World", heat: "Core", desc: "Places, cities, nature, animals, history" },
   { id: "science", code: "s", name: "Science & Tech", heat: "Brainy", desc: "Space, gadgets, machines, vehicles" },
-  { id: "fun", code: "f", name: "Fantasy & Fun", heat: "Playful", desc: "Myths, monsters, showbiz, sports, music" }
+  { id: "fun", code: "f", name: "Fantasy & Fun", heat: "Playful", desc: "Myths, monsters, showbiz, sports, music" },
+  { id: "double", code: "d", name: "Double Meaning", heat: "Best clues", desc: "Bank, Bat, Spring, Pitch: words with two lives. About a quarter of every board" },
+  { id: "action", code: "a", name: "Action & Description", heat: "Variety", desc: "Verbs and adjectives like Charge, Strike, Sharp, Cold" },
+  { id: "abstract", code: "x", name: "Abstract", heat: "Expert", desc: "Time, Luck, Echo, Trust, Chaos. Harder clues for experienced players" },
+  { id: "spy", code: "k", name: "Spy & Crime", heat: "On theme", desc: "Agents, ciphers, heists, detectives, military" },
+  { id: "icons", code: "i", name: "Icons & Legends", heat: "Famous", desc: "Timeless people, characters and landmarks" }
 ];
+const DEFAULT_PACKS_G = ["everyday", "world", "science", "fun", "double", "action", "spy", "icons"];
+const DOUBLE_SHARE = 0.24;
 const WORDS_G = {}, CLUSTER_G = {};
 PACKS_G.forEach(p => {
   WORDS_G[p.id] = [];
@@ -446,7 +488,7 @@ const CLUSTER_S = {};
 Object.keys(GROUPS).forEach(g => GROUPS[g].forEach(w => { if (!CLUSTER_S[w]) CLUSTER_S[w] = g; }));
 const capS = g => (g === "vibe" ? 1 : 2);
 const capG = () => 3;
-const STOPWORDS = new Set(["the", "and", "with", "from", "for", "act", "out", "off", "list"]);
+const STOPWORDS = new Set(["the", "and", "with", "from", "for", "act", "out", "off", "list", "of", "to", "in", "on", "an"]);
 function tokens(w) {
   return w.toLowerCase().split(/[^a-z]+/).filter(t => t.length >= 2 && !STOPWORDS.has(t))
     .map(t => (t.length > 3 && /[^s]s$/.test(t) ? t.slice(0, -1) : t));
@@ -492,7 +534,7 @@ function sanitize(p) {
     stories: p.stories !== false
   };
   if (!out.packsS.length) out.packsS = ["mild", "hot", "wild", "confess"];
-  if (!out.packsG.length) out.packsG = PACKS_G.map(x => x.id);
+  if (!out.packsG.length) out.packsG = DEFAULT_PACKS_G.slice();
   return out;
 }
 const packsOf = c => (c.mode === "spicy" ? PACKS_S : PACKS_G);
@@ -543,7 +585,14 @@ function dealGame(cfg, seq, rot) {
     const everyday = Array.from(new Set(WORDS.classic)).filter(w => !set.has(w)).sort();
     words = pickWords(rng, spicy, everyday, Math.round(cfg.mix / 25 * L.size), L.size, CLUSTER_S, capS);
   } else {
-    words = pickWords(rng, poolFor("general", cfg.packsG), [], L.size, L.size, CLUSTER_G, capG);
+    const all = poolFor("general", cfg.packsG);
+    if (cfg.packsG.includes("double")) {
+      // Double-meaning words make the best clues, so they get a guaranteed share of every board.
+      const dbl = Array.from(new Set(WORDS_G.double)).sort(), dset = new Set(dbl);
+      words = pickWords(rng, dbl, all.filter(w => !dset.has(w)), Math.round(DOUBLE_SHARE * L.size), L.size, CLUSTER_G, capG);
+    } else {
+      words = pickWords(rng, all, [], L.size, L.size, CLUSTER_G, capG);
+    }
   }
   const teams = TEAMS.slice(0, cfg.teams);
   const si = (rot + seq - 1) % teams.length;
@@ -622,6 +671,11 @@ function storeError(err) {
 let store = null, roomId = null, unsub = null, R = null, lastSeen = null, firstLoad = true;
 let spy = false, draft = null, draftDirty = false, pendingAnim = null;
 let localPrefs = sanitize(load("cn-prefs"));
+if (load("cn-packs-v") !== 2) {
+  // New Classic packs arrived: switch them on once for people who saved settings before they existed.
+  localPrefs.packsG = Array.from(new Set(localPrefs.packsG.concat(DEFAULT_PACKS_G)));
+  save("cn-prefs", localPrefs); save("cn-packs-v", 2);
+}
 const winShown = {};
 
 function cleanName(s) { return String(s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
@@ -996,7 +1050,7 @@ function renderSetup() {
     (d.teams > 2 ? " Hitting a black tile knocks that team out." : " Hitting a black tile loses the game.");
   $("balanceLine").textContent = spicyMode
     ? "Boards are balanced automatically: at most 2 words from any theme (drinks, underwear, toys, body parts…), no two words that share a root like Booty and Booty Call, and only one vague word like Naughty or Horny."
-    : "Boards are balanced automatically: at most 3 words from any category (animals, food, space…) and no two words that share a root.";
+    : "Boards are balanced automatically: at most 3 words from any category (animals, food, space…) and no two words that share a root." + (d.packsG.includes("double") ? " With Double Meaning on, about a quarter of each board is double-meaning words." : "");
   const sel = $("mix");
   if (!sel.options.length) MIXES.forEach(m => { const o = document.createElement("option"); o.value = m.n; o.textContent = m.label; sel.appendChild(o); });
   sel.value = String(d.mix);
