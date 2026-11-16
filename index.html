@@ -357,7 +357,7 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
           <li>Hit your own color and keep guessing (up to the number plus one). Tan is a bystander and ends your turn. Another team's color ends your turn and helps that team.</li>
           <li>Black tiles are assassins. With 2 teams, touching one loses the game on the spot. With 3 or 4 teams, that team is knocked out and the rest play on. The last team standing wins.</li>
           <li>The starting team has one extra word, and the starting team rotates every game so everyone gets a turn going first. Board size grows with teams: 5×5 for 2, 6×5 for 3, 6×6 for 4. The Big board setting adds a row and a column for playing on a TV or projector.</li>
-          <li>Vedant's Birthday mode (Classic words plus Vedant words): every team has one hidden Vedant word on its own color, and a few lookalike words are decoys. Spymasters see a gold V on the real ones. Find your team's Vedant word and spin the wheel for a power. Find another team's and whoever tapped it does a dare.</li>
+          <li>Vedant's Birthday mode (Classic words plus Vedant words): every team has one hidden Vedant word on its own color, and a few lookalike words are decoys. Spymasters see a gold V on the real ones. Find your team's Vedant word and spin the wheel for a power. Find another team's and whoever tapped it spins for a task.</li>
           <li>Powers: <b>Cheat Day</b> means your next wrong guess doesn't end your turn. <b>Saiyan Comeback</b> means a black tile only costs you your next turn instead of the game (lasts until used). <b>Superset</b> means your spymaster can give a two-word clue next turn.</li>
           <li>After Dark only: when a Confessions word like "Worst Date" or "Drunk Text" is revealed, the person who tapped it tells their real story about it, or drinks.</li>
         </ol>
@@ -392,13 +392,13 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
 <div class="overlay" id="dareOverlay" hidden>
   <div class="modal vmodal" role="dialog" aria-modal="true" aria-labelledby="dareTitle">
     <p class="kicker">Wrong Vedant word</p>
-    <h2 id="dareTitle">Dare time!</h2>
+    <h2 id="dareTitle">Task time!</h2>
     <p id="dareIntro"></p>
     <div class="wheelwrap dare-wheelwrap" aria-hidden="true"><div class="wheel" id="dareWheel"></div></div>
     <p class="dare" id="dareText" hidden></p>
     <div class="row">
-      <button type="button" class="btn-primary btn-big" id="dareSpin">Spin for a dare</button>
-      <button type="button" class="btn-primary" id="dareDone" hidden>Dare done</button>
+      <button type="button" class="btn-primary btn-big" id="dareSpin">Spin for a task</button>
+      <button type="button" class="btn-primary" id="dareDone" hidden>Task done</button>
     </div>
   </div>
 </div>
@@ -578,11 +578,11 @@ const STORY = new Set(WORDS.confess);
 // ---------- Vedant's birthday edition ----------
 // Each team gets one hidden Vedant word on its own color, plus a few lookalike decoys from the same list.
 const VEDANT_WORDS = {
-  food: ["All You Can Eat","Seconds","Appetite","Buffet","Food Coma","Midnight Snack","Third Plate","Cheat Meal","Family Size","Leftovers","Refill","Second Dinner","Combo Meal","Super Size","Bottomless","Takeout","Late Night Order"],
-  gym: ["Protein","Extra Protein","Leg Day","Workout","Gains","Bench Press","Bulking","Dumbbell","Deadlift","Squat Rack","Rest Day","Cardio","Spotter","Barbell"],
-  anime: ["Manga","Luffy","Zoro","Sanji","Goku","Vegeta","Super Saiyan","Sasuke","Kakashi","Hokage","Rasengan","Shadow Clone","Nine Tails","Ramen","Eren","Levi","Ryuk","Kira","Saitama","Grimoire","Straw Hat","Devil Fruit","Pirate King","Training Arc"]
+  food: ["All You Can Eat","Seconds","Appetite","Buffet","Food Coma","Midnight Snack","Third Plate","Cheat Meal","Family Size","Leftovers","Refill","Second Dinner","Combo Meal","Super Size","Bottomless","Takeout","Late Night Order","Feast","Food Baby","Fridge Raid","Snack Attack","Pizza Party","Eating Contest","Clean Plate","Extra Large","Food Truck","Hungry","Unlimited","Dessert","Party Size","Double Patty"],
+  gym: ["Protein","Extra Protein","Leg Day","Workout","Gains","Bench Press","Bulking","Dumbbell","Deadlift","Squat Rack","Rest Day","Cardio","Spotter","Barbell","Meal Prep","Protein Shake","Reps","Pull-Up","Push-Up","Treadmill","Kettlebell","Biceps","Six Pack","Muscle","Chest Day","Beast Mode","Gym Bag","Warm Up"],
+  anime: ["Manga","Ramen","Goku","Super Saiyan"]
 };
-const VEDANT = Array.from(new Set([].concat(VEDANT_WORDS.food, VEDANT_WORDS.gym, VEDANT_WORDS.anime)));
+const VEDANT = Array.from(new Set([].concat(...Object.values(VEDANT_WORDS))));
 const POWERS = [
   { key: "cheat", name: "Cheat Day", color: "--p1", desc: "Your team's next wrong guess doesn't end your turn. Black tiles still count." },
   { key: "comeback", name: "Saiyan Comeback", color: "--p2", desc: "Hit a black tile and you survive: your team just sits out its next turn. Lasts until used." },
@@ -596,10 +596,10 @@ function applyModeLook(mode) {
   $("modeTag").textContent = MODE_NAMES[mode] || "Classic";
 }
 const DARES = [
-  { label: "Buffet Order", text: "Name 3 things Vedant would order at an all-you-can-eat place." },
+  { label: "Last Text", text: "Last Text: read the last text you sent Vedant out loud to the room." },
   { label: "Naruto Run", text: "Do the Naruto run across the room." },
   { label: "Pushups", text: "{PUSHUPS}" },
-  { label: "Compliment", text: "Give Vedant a genuine compliment." },
+  { label: "Truth or Lie", text: "Two Truths & a Lie: say three things about Vedant, one of them made up. The room guesses the lie." },
   { label: "Then vs Now", text: "First impression: tell the room what you thought of Vedant when you first met him, and what you think of him now. Did it change?" },
   { label: "Crazy Memory", text: "Tell the room a crazy memory you have of Vedant." },
   { label: "Feed Vedant", text: "Feed Vedant: bring him a snack from the table." },
@@ -825,7 +825,7 @@ function cleanName(s) { return String(s || "").toLowerCase().trim().replace(/[^a
 function randomName(mode) {
   const NAMES = {
     spicy: [["velvet","naughty","steamy","cheeky","sultry","frisky","wicked","silky","sticky","spicy","tipsy","saucy"], ["peach","cherry","kiss","tango","martini","garter","rose","flame","lace","tequila","honey","cuffs"]],
-    vedant: [["hungry","mighty","legendary","super","epic","golden","unstoppable","fearless","turbo","shredded","bottomless","birthday"], ["ramen","saiyan","buffet","ninja","pirate","titan","gains","hokage","dumbbell","feast","rasengan","protein"]],
+    vedant: [["hungry","mighty","legendary","super","epic","golden","unstoppable","fearless","turbo","shredded","bottomless","birthday"], ["burger","pancake","buffet","ninja","pirate","titan","gains","squat","dumbbell","feast","waffle","protein"]],
     general: [["brave","silent","golden","lucky","rapid","secret","clever","hidden","cosmic","bold","quiet","swift"], ["falcon","comet","otter","harbor","maple","rocket","tiger","lantern","pebble","atlas","panda","river"]]
   };
   const [a, n] = NAMES[mode] || NAMES.general;
@@ -1152,9 +1152,9 @@ function renderVedant() {
   // dare wheel
   const dov = $("dareOverlay");
   if (d && d.id !== dareClosedId) {
-    $("dareTitle").textContent = cap(d.team) + ", dare time!";
+    $("dareTitle").textContent = cap(d.team) + ", task time!";
     $("dareTitle").className = "t-" + d.team;
-    $("dareIntro").textContent = "“" + d.word + "” was " + cap(d.owner) + "'s hidden Vedant word, not yours. Whoever tapped it spins the wheel for a dare.";
+    $("dareIntro").textContent = "“" + d.word + "” was " + cap(d.owner) + "'s hidden Vedant word, not yours. Whoever tapped it spins the wheel for a task.";
     const wheel = $("dareWheel");
     const hasResult = d.result !== null && d.result !== undefined;
     if (!hasResult) {
@@ -1331,7 +1331,7 @@ function render() {
   const vOn = g.vedant.length > 0;
   $("hint").textContent = spy
     ? "Spymaster view: tapping is off on this device. Don't let your team see this screen!" + (vOn ? " A gold V marks each team's hidden Vedant word. Lookalike words without a V are decoys." : "")
-    : vOn ? "Every team has one hidden Vedant word. Find yours and spin for a power. Find another team's and you owe a dare."
+    : vOn ? "Every team has one hidden Vedant word. Find yours and spin for a power. Find another team's and you owe a task."
           : "Tap a word to guess. Everyone in the room sees it instantly.";
   $("roomLink").value = location.href.split("#")[0] + "#" + roomId;
 
