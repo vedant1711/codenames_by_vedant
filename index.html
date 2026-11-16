@@ -207,24 +207,28 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
 #deal.dirty { background: var(--accent); border-color: var(--accent); }
 /* ---------- Vedant's birthday edition ---------- */
 :root { --gold: #e9b63b; --gold-ink: #8a6200; --p1: #e8712b; --p2: #7a4cc2; --p3: #23868c; --p4: #b5435f; }
-.wheelwrap.dare-wheelwrap { width: 240px; height: 240px; }
-.wheel .slice { position: absolute; left: 50%; top: 50%; width: 74px; text-align: center; white-space: nowrap; font-family: var(--font-card); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .01em; line-height: 1; color: #ffffff; }
+.wheel .slice { position: absolute; left: 50%; top: 50%; width: calc(var(--ws) * .34); text-align: center; white-space: nowrap; font-family: var(--font-card); font-weight: 700; text-transform: uppercase; font-size: calc(var(--ws) * .056); letter-spacing: .01em; line-height: 1; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 .card .vmark { position: absolute; top: 4px; right: 5px; font-family: var(--font-card); font-weight: 700; font-size: 11px; line-height: 1; padding: 2px 4px; border-radius: 3px; background: var(--gold); color: #3a2e00; letter-spacing: .04em; pointer-events: none; z-index: 1; }
 .powerline { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 0; }
 .chip { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid currentColor; }
-.vmodal { max-width: 440px; max-height: calc(100% - 8px); overflow-y: auto; }
+.vmodal { max-width: min(880px, 100%); max-height: calc(100% - 8px); overflow-y: auto; }
+.vmodal h2 { font-size: clamp(30px, 4.2vw, 52px); }
+.vmodal > p { font-size: clamp(15px, 1.7vw, 21px); }
+.vmodal .row button { font-size: clamp(15px, 1.5vw, 21px); padding: .7em 1.4em; }
+.vbody { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+@media (min-width: 900px) and (min-aspect-ratio: 5/4) { .vbody { flex-direction: row; gap: 36px; } .vbody .plist { flex: 1; } }
 .kicker { font-family: var(--font-card); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-ink); font-size: 14px; margin: 0 !important; }
-.wheelwrap { position: relative; width: 210px; height: 210px; max-width: 100%; margin: 8px auto 4px; }
-.wheelwrap::after { content: ""; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid var(--ink); z-index: 2; }
-.wheel { position: relative; width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--ink); background: conic-gradient(var(--p1) 0deg 120deg, var(--p2) 120deg 240deg, var(--p3) 240deg 360deg); transition: transform 3.4s cubic-bezier(.12,.72,.1,1); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
-.wheel span { position: absolute; left: 50%; top: 50%; width: 84px; text-align: center; font-family: var(--font-card); font-weight: 700; text-transform: uppercase; font-size: 15px; line-height: 1.05; color: #ffffff; }
-.wheel::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--ink); }
-.plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; font-size: 14px; line-height: 1.4; color: var(--muted); }
+.wheelwrap { --ws: clamp(230px, min(80vw, 54vh), 480px); position: relative; width: var(--ws); height: var(--ws); flex: none; margin: calc(var(--ws) * .06) auto 6px; }
+.wheelwrap::after { content: ""; position: absolute; top: calc(var(--ws) * -.055); left: 50%; transform: translateX(-50%); border-left: calc(var(--ws) * .05) solid transparent; border-right: calc(var(--ws) * .05) solid transparent; border-top: calc(var(--ws) * .1) solid var(--ink); z-index: 2; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+.wheel { position: relative; width: 100%; height: 100%; border-radius: 50%; border: calc(var(--ws) * .018) solid var(--ink); background: conic-gradient(var(--p1) 0deg 120deg, var(--p2) 120deg 240deg, var(--p3) 240deg 360deg); transition: transform 3.4s cubic-bezier(.12,.72,.1,1); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.wheel span { position: absolute; left: 50%; top: 50%; width: calc(var(--ws) * .4); text-align: center; font-family: var(--font-card); font-weight: 700; text-transform: uppercase; font-size: calc(var(--ws) * .075); line-height: 1; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.wheel::after { content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--ws) * .1); height: calc(var(--ws) * .1); transform: translate(-50%, -50%); border-radius: 50%; background: var(--ink); border: 3px solid #ffffff; box-sizing: border-box; }
+.plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; font-size: clamp(14px, 1.6vw, 20px); line-height: 1.4; color: var(--muted); }
 .plist li { display: flex; gap: 9px; align-items: flex-start; padding: 6px 8px; border-radius: 6px; }
 .plist li b { color: var(--ink); }
 .plist li.win { background: var(--tan-soft); outline: 2px solid var(--gold); }
-.plist i { width: 12px; height: 12px; border-radius: 3px; flex: none; margin-top: 4px; }
-.dare { font-size: 19px; font-weight: 600; color: var(--ink) !important; line-height: 1.35; }
+.plist i { width: .9em; height: .9em; border-radius: 3px; flex: none; margin-top: .25em; }
+.dare { font-size: clamp(19px, 2.5vw, 32px); font-weight: 600; color: var(--ink) !important; line-height: 1.35; }
 #dareOverlay, #spinOverlay { z-index: 31; }
 </style>
 <script src="firebase-config.js"></script>
@@ -374,14 +378,16 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
     <p class="kicker">Vedant word!</p>
     <h2 id="spinTitle">Red found it!</h2>
     <p id="spinText"></p>
-    <div class="wheelwrap" aria-hidden="true">
-      <div class="wheel" id="wheel">
-        <span style="transform: translate(-50%, -50%) rotate(60deg) translateY(-58px)">Cheat Day</span>
-        <span style="transform: translate(-50%, -50%) rotate(180deg) translateY(-58px) rotate(180deg)">Saiyan Comeback</span>
-        <span style="transform: translate(-50%, -50%) rotate(300deg) translateY(-58px)">Superset</span>
+    <div class="vbody">
+      <div class="wheelwrap" aria-hidden="true">
+        <div class="wheel" id="wheel">
+          <span style="transform: translate(-50%, -50%) rotate(60deg) translateY(calc(var(--ws) * -.25)) rotate(-60deg)">Cheat Day</span>
+          <span style="transform: translate(-50%, -50%) rotate(180deg) translateY(calc(var(--ws) * -.25)) rotate(-180deg)">Saiyan Comeback</span>
+          <span style="transform: translate(-50%, -50%) rotate(300deg) translateY(calc(var(--ws) * -.25)) rotate(-300deg)">Superset</span>
+        </div>
       </div>
+      <ul class="plist" id="plist"></ul>
     </div>
-    <ul class="plist" id="plist"></ul>
     <p class="dare" id="spinResult" hidden></p>
     <div class="row">
       <button type="button" class="btn-primary btn-big" id="spinBtn">Spin the wheel</button>
@@ -1174,6 +1180,7 @@ function renderVedant() {
       else { requestAnimationFrame(() => { wheel.style.transform = "rotate(" + (360 * 6 + 360 - center + jitter) + "deg)"; }); setTimeout(done, 3500); }
     }
     dov.hidden = false;
+    requestAnimationFrame(fitSlices);
   } else dov.hidden = true;
 }
 // Builds the dare wheel once: one colored slice and a label per dare.
@@ -1184,11 +1191,43 @@ function buildDareWheel() {
     const s = document.createElement("span");
     s.className = "slice";
     s.textContent = x.label;
-    s.style.transform = "translate(-50%, -50%) rotate(" + (k * seg + seg / 2) + "deg) translateY(-63px) rotate(-90deg)";
+    const c = k * seg + seg / 2;
+    // radial labels; the left half is flipped so nothing reads upside down
+    s.style.transform = "translate(-50%, -50%) rotate(" + c + "deg) translateY(calc(var(--ws) * -.29)) rotate(" + (c > 180 ? 90 : -90) + "deg)";
     wheel.appendChild(s);
   });
 }
 buildDareWheel();
+// Shrinks any task label that is longer than its slice, measured on a canvas so the wheel's rotation doesn't matter.
+const measureCtx = document.createElement("canvas").getContext("2d");
+function fitSlices() {
+  const wheel = $("dareWheel"), ws = wheel.offsetWidth;
+  if (!ws) return;
+  const maxLen = ws * .31;
+  wheel.querySelectorAll(".slice").forEach(s => {
+    const base = ws * .056;
+    s.style.fontSize = base + "px";
+    const cs = getComputedStyle(s);
+    measureCtx.font = cs.fontWeight + " " + base + "px " + cs.fontFamily;
+    const text = s.textContent.toUpperCase(), w = t => measureCtx.measureText(t).width * 1.03;
+    s.style.whiteSpace = "nowrap"; s.style.width = ""; s.style.lineHeight = "";
+    let len = w(text);
+    if (len > maxLen && text.indexOf(" ") > -1) {
+      // two lines: split at the space that gives the shortest longest line
+      const words = text.split(" ");
+      let best = null;
+      for (let k = 1; k < words.length; k++) {
+        const a = words.slice(0, k).join(" "), b = words.slice(k).join(" ");
+        const l = Math.max(w(a), w(b));
+        if (!best || l < best.l) best = { a, b, l };
+      }
+      s.style.whiteSpace = "normal"; s.style.width = maxLen + "px"; s.style.lineHeight = "1.02";
+      s.textContent = s.textContent; // keep original text; the browser wraps at the space
+      len = best.l;
+    }
+    if (len > maxLen) s.style.fontSize = (base * maxLen / len) + "px";
+  });
+}
 
 let toastTimer;
 function toast(msg, long) {
@@ -1463,7 +1502,7 @@ $("copyRoom").addEventListener("click", () => {
     else fallback();
   } catch (e) { fallback(); }
 });
-window.addEventListener("resize", () => { sizeFx(); requestAnimationFrame(fitAll); });
+window.addEventListener("resize", () => { sizeFx(); requestAnimationFrame(fitAll); requestAnimationFrame(fitSlices); });
 window.addEventListener("hashchange", route);
 window.addEventListener("popstate", route);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitAll());
