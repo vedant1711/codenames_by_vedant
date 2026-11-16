@@ -30,6 +30,9 @@
 }
 body.spicy { --accent: var(--spice); }
 body.vedant { --accent: #9a6a00; }
+body.bigboard .wrap { max-width: 1240px; }
+.board.xwide .card { aspect-ratio: 1.35; }
+@media (max-width: 560px) { .board.xwide .card { aspect-ratio: .85; padding: 2px; letter-spacing: 0; } .board.xwide { gap: 4px; } }
 #lobbyMode, #modeSeg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 #lobbyMode button, #modeSeg button { justify-content: center; text-align: center; line-height: 1.2; }
 * { box-sizing: border-box; }
@@ -44,7 +47,7 @@ body {
   padding-block: 0 32px;
 }
 .stripe { height: 6px; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))); background: var(--red); transition: background .25s; }
-.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-top: 14px; }
+.wrap { max-width: 980px; transition: max-width .2s; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-top: 14px; }
 
 header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
 .brand { display: flex; align-items: baseline; gap: 8px; }
@@ -97,6 +100,7 @@ button:disabled { opacity: .45; cursor: default; }
 .card:hover:not(.revealed) { transform: translateY(-1px); border-color: #9aa2ad; }
 .card .w { display: block; max-width: 100%; white-space: nowrap; transition: opacity .3s; }
 .card .w.two { white-space: normal; }
+.card .w.brk { word-break: break-all; }
 .card[data-c=red]    { --tc: var(--red);    --ton: var(--red-on);    --tsoft: var(--red-soft);    --tink: var(--red-ink); }
 .card[data-c=blue]   { --tc: var(--blue);   --ton: var(--blue-on);   --tsoft: var(--blue-soft);   --tink: var(--blue-ink); }
 .card[data-c=green]  { --tc: var(--green);  --ton: var(--green-on);  --tsoft: var(--green-soft);  --tink: var(--green-ink); }
@@ -318,6 +322,13 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
               <button type="button" id="assPlus" aria-label="More black tiles">+</button>
             </div>
           </div>
+          <div class="field">
+            <span class="flabel" id="sizeLbl">Board size</span>
+            <div class="seg" role="group" aria-labelledby="sizeLbl" id="sizeSeg">
+              <button type="button" data-big="0" aria-pressed="true">Normal</button>
+              <button type="button" data-big="1" aria-pressed="false">Big (TV or projector)</button>
+            </div>
+          </div>
           <div class="field" id="mixField">
             <label for="mix">Board mix</label>
             <select id="mix"></select>
@@ -345,7 +356,7 @@ body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: ma
           <li>On your turn, your spymaster gives a one-word clue and a number, like "Ocean, 2". Anyone on the team taps the guesses.</li>
           <li>Hit your own color and keep guessing (up to the number plus one). Tan is a bystander and ends your turn. Another team's color ends your turn and helps that team.</li>
           <li>Black tiles are assassins. With 2 teams, touching one loses the game on the spot. With 3 or 4 teams, that team is knocked out and the rest play on. The last team standing wins.</li>
-          <li>The starting team has one extra word, and the starting team rotates every game so everyone gets a turn going first. Board size grows with teams: 5×5 for 2, 6×5 for 3, 6×6 for 4.</li>
+          <li>The starting team has one extra word, and the starting team rotates every game so everyone gets a turn going first. Board size grows with teams: 5×5 for 2, 6×5 for 3, 6×6 for 4. The Big board setting adds a row and a column for playing on a TV or projector.</li>
           <li>Vedant's Birthday mode (Classic words plus Vedant words): every team has one hidden Vedant word on its own color, and a few lookalike words are decoys. Spymasters see a gold V on the real ones. Find your team's Vedant word and spin the wheel for a power. Find another team's and whoever tapped it does a dare.</li>
           <li>Powers: <b>Cheat Day</b> means your next wrong guess doesn't end your turn. <b>Saiyan Comeback</b> means a black tile only costs you your next turn instead of the game (lasts until used). <b>Superset</b> means your spymaster can give a two-word clue next turn.</li>
           <li>After Dark only: when a Confessions word like "Worst Date" or "Drunk Text" is revealed, the person who tapped it tells their real story about it, or drinks.</li>
@@ -452,23 +463,23 @@ const GENERAL = {
     history: ["King","Queen","Prince","Knight","Pirate","Viking","Ninja","Samurai","Cowboy","Pharaoh","Emperor","Empire","Army","Navy","War","Treaty","Revolution","Gladiator","Sword","Shield","Arrow","Bow","Cannon","Flag","Throne","Tomb","Mummy"]
   },
   science: {
-    science: ["Atom","Cell","Gene","Virus","Germ","Brain","Heart","Bone","Blood","Lung","Skeleton","Microscope","Gravity","Energy","Oxygen","Carbon","Gold","Silver","Iron","Copper","Diamond","Crystal","Acid","Plastic","Fossil","Dinosaur","Volt","Lab","Formula","Experiment"],
-    space: ["Moon","Star","Rocket","Planet","Comet","Galaxy","Orbit","Satellite","Asteroid","Mars","Jupiter","Saturn","Eclipse","Telescope","Alien","Meteor","Nebula","Spaceship","Black Hole","Shuttle","Cosmos","Launch","Crater","UFO"],
+    science: ["Atom","Cell","Gene","Virus","Germ","Brain","Heart","Bone","Blood","Lung","Skeleton","Microscope","Gravity","Energy","Oxygen","Carbon","Gold","Silver","Iron","Copper","Diamond","Crystal","Acid","Plastic","Fossil","Dinosaur","Lab","Formula","Experiment"],
+    space: ["Moon","Star","Rocket","Planet","Comet","Galaxy","Orbit","Satellite","Asteroid","Mars","Jupiter","Saturn","Eclipse","Telescope","Alien","Meteor","Spaceship","Black Hole","Shuttle","Cosmos","Launch","Crater","UFO"],
     tech: ["Computer","Robot","Laser","Phone","Camera","Radio","Television","Internet","Email","Password","Keyboard","Screen","Cable","Chip","Code","Server","Engine","Motor","Wheel","Gear","Drill","Hammer","Saw","Screw","Nail","Bolt","Drone","Tablet","Printer","Speaker","Microphone","Headphones","Remote","Bulb","Plug"],
     transport: ["Car","Bus","Train","Truck","Taxi","Bicycle","Motorcycle","Plane","Helicopter","Jet","Boat","Ship","Submarine","Yacht","Canoe","Tractor","Ambulance","Tank","Subway","Elevator","Skateboard","Sled","Parachute","Anchor","Tire","Brake","Fuel","Passport"]
   },
   fun: {
-    fantasy: ["Dragon","Unicorn","Wizard","Witch","Ghost","Vampire","Zombie","Werewolf","Giant","Dwarf","Elf","Fairy","Mermaid","Troll","Goblin","Phoenix","Angel","Devil","Genie","Monster","Wand","Potion","Spell","Curse","Magic","Cauldron","Treasure","Oracle","Titan","Hydra","Centaur"],
+    fantasy: ["Dragon","Unicorn","Wizard","Witch","Ghost","Vampire","Zombie","Werewolf","Giant","Dwarf","Elf","Fairy","Mermaid","Troll","Goblin","Phoenix","Angel","Devil","Genie","Monster","Wand","Potion","Spell","Curse","Magic","Cauldron","Treasure","Titan"],
     showbiz: ["Movie","Circus","Clown","Magician","Juggler","Puppet","Comic","Cartoon","Hero","Villain","Party","Concert","Opera","Ballet","Ticket","Award","Trophy","Medal","Stage","Costume","Director","Studio","Popcorn","Red Carpet","Premiere","Sequel","Celebrity","Fan"],
     sports: ["Football","Soccer","Baseball","Basketball","Tennis","Golf","Boxing","Hockey","Chess","Poker","Dice","Card","Puzzle","Lottery","Marathon","Olympics","Goal","Net","Racket","Ball","Referee","Coach","Team","Skate","Surf","Ski","Dart","Bowling","Karate","Wrestling"],
     music: ["Piano","Guitar","Drum","Violin","Trumpet","Flute","Harp","Bell","Whistle","Horn","Organ","Band","Choir","Song","Note","Rhythm","Jazz","Rock","Disco","Banjo","Cello","Saxophone","Tuba","Lullaby","Anthem","Melody","DJ","Karaoke"]
   },
   double: {
-    dm_animals: ["Bat","Mouse","Mole","Seal","Crane","Duck","Calf","Kid","Bear","Turkey","Kiwi","Pike","Bass","Swallow","Fly","Bug","Buck","Hound","Ram","Pupil","Jaguar","Python","Viper","Mustang"],
-    dm_nature_food: ["Spring","Bark","Palm","Plant","Root","Shell","Wave","Well","Log","Stick","Mint","Sage","Date","Orange","Jam","Toast","Pot","Pan","Bowl","Punch","Fall","Current","Bay","Branch","Trunk","Leaves","Pepper","Nut","Squash","Chip"],
-    dm_games: ["Pitch","Match","Club","Court","Draw","Deck","Jack","Spade","Diamond","Ring","Round","Lap","Pool","Racket","Cap","Pitcher","Slide","Switch","Pick","Score","Hit","Bowler","Coach","Volley","Set","Serve","Tag","Puck","Kite","Hook"],
-    dm_money_office: ["Bank","Bill","Check","Pound","Capital","Change","Fine","File","Letter","Note","Post","Press","Stamp","Draft","Figure","Count","Case","Staff","Ruler","Scale","Line","Plot","Novel","Story","Volume","Present","Model","Sign","Square","Mass"],
-    dm_everyday: ["Light","Port","Yard","Shed","Row","Stern","Hatch","Tank","Mine","March","Tear","Lie","Rest","Trip","Rush","Cross","Kind","Rare","Flat","Lead","Cast","Box","Key","Lock","Range","Screen","Sink","Shower","Iron","Organ","Suit","Tie","Watch","Glasses","Chest","Foot","Sole","Temple","Patient","Second","Bolt","Fan","Pen","Bow","Trunk","Wind","Spirit","Jumper","Grave","Cell"]
+    dm_animals: ["Bat","Mouse","Mole","Seal","Crane","Duck","Calf","Kid","Bear","Turkey","Kiwi","Bass","Swallow","Fly","Bug","Buck","Hound","Ram","Jaguar","Python","Viper"],
+    dm_nature_food: ["Spring","Bark","Palm","Plant","Root","Shell","Wave","Well","Log","Stick","Mint","Date","Orange","Jam","Toast","Pot","Pan","Bowl","Punch","Fall","Current","Branch","Trunk","Leaves","Pepper","Nut","Squash","Chip"],
+    dm_games: ["Pitch","Match","Club","Court","Draw","Deck","Jack","Spade","Diamond","Ring","Round","Lap","Pool","Racket","Cap","Pitcher","Slide","Switch","Pick","Score","Hit","Coach","Volley","Set","Serve","Tag","Puck","Kite","Hook"],
+    dm_money_office: ["Bank","Bill","Check","Pound","Capital","Change","Fine","File","Letter","Note","Post","Press","Stamp","Draft","Figure","Count","Case","Staff","Ruler","Scale","Line","Plot","Novel","Story","Volume","Present","Model","Sign","Square"],
+    dm_everyday: ["Light","Port","Yard","Shed","Row","Tank","Mine","March","Tear","Lie","Rest","Trip","Rush","Cross","Kind","Rare","Flat","Lead","Cast","Box","Key","Lock","Range","Screen","Sink","Shower","Iron","Organ","Suit","Tie","Watch","Glasses","Chest","Foot","Sole","Temple","Patient","Second","Bolt","Fan","Pen","Bow","Trunk","Wind","Spirit","Grave","Cell"]
   },
   action: {
     moves: ["Charge","Strike","Drop","Run","Jump","Swim","Climb","Dive","Float","Spin","Throw","Catch","Kick","Push","Pull","Crawl","Bounce","Roll","Sail","Ride","Race","Wander","Slip","Skip","Leap","Dash","Sprint","Drift","Glide","Tumble"],
@@ -483,16 +494,16 @@ const GENERAL = {
     world: ["Limit","Edge","Center","Void","Noise","Taste","Touch","Sense","Mood","Balance","Gravity","Energy","Speed","Distance","Weight","Size","Shape","Color","Space","Season","Dawn","Dusk","Midnight","Weekend","Birthday","Holiday","Century","Moment","Deadline","Tomorrow"]
   },
   spy: {
-    spy: ["Agent","Cipher","Vault","Decoy","Bug","Wire","Mole","Code","Disguise","Wiretap","Radar","Sonar","Mission","Target","Signal","Morse","Briefcase","Microfilm","Safehouse","Handler","Informant","Codename","Gadget","Satellite","Surveillance","Passport","Embassy","Defector","Blackmail","Sleeper"],
+    spy: ["Agent","Vault","Decoy","Bug","Wire","Mole","Code","Disguise","Wiretap","Radar","Sonar","Mission","Target","Signal","Briefcase","Safehouse","Informant","Codename","Gadget","Satellite","Surveillance","Passport","Embassy","Blackmail"],
     crime: ["Alibi","Clue","Witness","Suspect","Heist","Ransom","Hostage","Fingerprint","Badge","Handcuffs","Prison","Warden","Bandit","Thief","Smuggler","Gangster","Mafia","Sheriff","Marshal","Bounty","Getaway","Poison","Forgery","Jury","Verdict","Lawyer","Mugshot","Lineup","Evidence","Crowbar"],
-    military: ["Bunker","Missile","Grenade","Rifle","Pistol","Bullet","Sniper","Tank","General","Colonel","Sergeant","Admiral","Medal","Camouflage","Ambush","Siege","Fortress","Trench","Parachute","Helicopter","Submarine","Radio","Compass","Flare","Barracks","Cadet","Drill","Salute","Armor","Torpedo"]
+    military: ["Bunker","Missile","Grenade","Rifle","Pistol","Bullet","Sniper","Tank","General","Colonel","Sergeant","Admiral","Medal","Camouflage","Ambush","Fortress","Trench","Parachute","Helicopter","Submarine","Radio","Compass","Flare","Drill","Salute","Armor","Torpedo"]
   },
   icons: {
-    minds: ["Einstein","Newton","Darwin","Edison","Tesla","Galileo","Curie","Pythagoras","Socrates","Plato","Archimedes","Copernicus","Hippocrates","Freud","Nobel"],
-    artists: ["Shakespeare","Mozart","Beethoven","Picasso","Da Vinci","Van Gogh","Michelangelo","Rembrandt","Bach","Homer","Dickens","Tolstoy","Houdini","Aesop","Monet"],
-    rulers: ["Cleopatra","Caesar","Napoleon","Columbus","Lincoln","Gandhi","Genghis Khan","Joan of Arc","Marco Polo","Tutankhamun","Alexander","Attila","Spartacus","Magellan","Gagarin"],
-    legends: ["Sherlock","Dracula","Frankenstein","Robin Hood","King Arthur","Merlin","Hercules","Zeus","Thor","Achilles","Medusa","Cinderella","Pinocchio","Peter Pan","Alice","Tarzan","Romeo","Hamlet","Santa","Pandora","Odysseus","Aladdin","Sinbad","Rapunzel","Gulliver"],
-    landmarks: ["Mona Lisa","Eiffel Tower","Big Ben","Colosseum","Stonehenge","Taj Mahal","Great Wall","Statue of Liberty","Titanic","Atlantis","Olympus","Excalibur","Holy Grail","Trojan Horse","Sphinx","Parthenon","Kremlin","Machu Picchu","Niagara","Grand Canyon"]
+    minds: ["Einstein","Newton","Darwin","Edison","Tesla","Galileo","Curie","Freud"],
+    artists: ["Shakespeare","Mozart","Beethoven","Picasso","Da Vinci","Van Gogh","Michelangelo","Bach","Homer"],
+    rulers: ["Cleopatra","Caesar","Napoleon","Columbus","Lincoln","Gandhi","Genghis Khan","Marco Polo","Alexander"],
+    legends: ["Sherlock","Dracula","Frankenstein","Robin Hood","King Arthur","Merlin","Hercules","Zeus","Thor","Achilles","Medusa","Cinderella","Pinocchio","Peter Pan","Alice","Tarzan","Romeo","Hamlet","Santa","Aladdin","Rapunzel"],
+    landmarks: ["Mona Lisa","Eiffel Tower","Big Ben","Colosseum","Taj Mahal","Great Wall","Statue of Liberty","Titanic","Atlantis","Trojan Horse","Sphinx","Niagara","Grand Canyon"]
   }
 };
 const PACKS_G = [
@@ -558,7 +569,9 @@ function tokens(w) {
 }
 
 const TEAMS = ["red", "blue", "green", "yellow"];
-const LAYOUTS = { 2: { size: 25, cols: 5, start: 9, other: 8 }, 3: { size: 30, cols: 6, start: 8, other: 7 }, 4: { size: 36, cols: 6, start: 8, other: 7 } };
+const LAYOUTS = { 2: { size: 25, cols: 5, start: 9, other: 8 }, 3: { size: 30, cols: 6, start: 7, other: 6 }, 4: { size: 36, cols: 6, start: 7, other: 6 } };
+// Big board (TV / projector): one more row and column, with about a third of the tiles left as bystanders.
+const BIG_LAYOUTS = { 2: { size: 36, cols: 6, start: 12, other: 11 }, 3: { size: 42, cols: 7, start: 10, other: 9 }, 4: { size: 49, cols: 7, start: 9, other: 8 } };
 const MAX_ASSASSINS = 5;
 const STORY = new Set(WORDS.confess);
 
@@ -566,8 +579,8 @@ const STORY = new Set(WORDS.confess);
 // Each team gets one hidden Vedant word on its own color, plus a few lookalike decoys from the same list.
 const VEDANT_WORDS = {
   food: ["All You Can Eat","Seconds","Appetite","Buffet","Food Coma","Midnight Snack","Third Plate","Cheat Meal","Family Size","Leftovers","Refill","Second Dinner","Combo Meal","Super Size","Bottomless","Takeout","Late Night Order"],
-  gym: ["Protein","Extra Protein","Leg Day","Workout","Gains","Bench Press","Bulking","Pre-Workout","Dumbbell","Deadlift","Squat Rack","Rest Day","Cardio","Personal Record","Spotter","Barbell"],
-  anime: ["Manga","Luffy","Zoro","Sanji","Goku","Vegeta","Super Saiyan","Senzu Bean","Sasuke","Kakashi","Hokage","Rasengan","Shadow Clone","Nine Tails","Ramen","Eren","Levi","Mikasa","Survey Corps","Ryuk","Kira","Saitama","Genos","Asta","Grimoire","Straw Hat","Devil Fruit","Pirate King","Training Arc"]
+  gym: ["Protein","Extra Protein","Leg Day","Workout","Gains","Bench Press","Bulking","Dumbbell","Deadlift","Squat Rack","Rest Day","Cardio","Spotter","Barbell"],
+  anime: ["Manga","Luffy","Zoro","Sanji","Goku","Vegeta","Super Saiyan","Sasuke","Kakashi","Hokage","Rasengan","Shadow Clone","Nine Tails","Ramen","Eren","Levi","Ryuk","Kira","Saitama","Grimoire","Straw Hat","Devil Fruit","Pirate King","Training Arc"]
 };
 const VEDANT = Array.from(new Set([].concat(VEDANT_WORDS.food, VEDANT_WORDS.gym, VEDANT_WORDS.anime)));
 const POWERS = [
@@ -623,6 +636,7 @@ function sanitize(p) {
     packsG: arr(p.packsG).filter(id => PACKS_G.some(x => x.id === id)),
     mix: MIXES.some(m => m.n === p.mix) ? p.mix : 17,
     teams: [2, 3, 4].includes(p.teams) ? p.teams : 2,
+    big: p.big === true,
     assassins: Number.isInteger(p.assassins) && p.assassins >= 0 && p.assassins <= MAX_ASSASSINS ? p.assassins : 1,
     penalties: p.penalties !== false,
     stories: p.stories !== false
@@ -634,7 +648,7 @@ function sanitize(p) {
 const packsOf = c => (c.mode === "spicy" ? PACKS_S : PACKS_G);
 const selOf = c => (c.mode === "spicy" ? c.packsS : c.packsG);
 function cfgKey(c) {
-  return c.mode + "|" + packsOf(c).filter(p => selOf(c).includes(p.id)).map(p => p.code).join("") + "|" + (c.mode === "spicy" ? c.mix : 0) + "|" + c.teams + "|" + c.assassins;
+  return c.mode + "|" + packsOf(c).filter(p => selOf(c).includes(p.id)).map(p => p.code).join("") + "|" + (c.mode === "spicy" ? c.mix : 0) + "|" + c.teams + "|" + c.assassins + "|" + (c.big ? "big" : "");
 }
 function poolFor(mode, packs) {
   const list = mode === "spicy" ? PACKS_S : PACKS_G, src = mode === "spicy" ? WORDS : WORDS_G;
@@ -642,8 +656,8 @@ function poolFor(mode, packs) {
   list.forEach(p => { if (packs.includes(p.id)) src[p.id].forEach(w => set.add(w)); });
   return Array.from(set).sort();
 }
-function layoutFor(teams, assassins) {
-  const L = LAYOUTS[teams];
+function layoutFor(teams, assassins, big) {
+  const L = (big ? BIG_LAYOUTS : LAYOUTS)[teams];
   return { size: L.size, cols: L.cols, rows: L.size / L.cols, start: L.start, other: L.other, assassins, neutral: L.size - L.start - L.other * (teams - 1) - assassins };
 }
 
@@ -674,7 +688,7 @@ function pickWords(rng, primary, secondary, nPrimary, total, cluster, capOf, pre
 // Deals a fresh board. The starting team rotates every game (rot is a random offset fixed per room).
 function dealGame(cfg, seq, rot) {
   const rng = rngFrom(Math.floor(Math.random() * 4294967296));
-  const L = layoutFor(cfg.teams, cfg.assassins);
+  const L = layoutFor(cfg.teams, cfg.assassins, cfg.big);
   const teams = TEAMS.slice(0, cfg.teams);
   const si = (rot + seq - 1) % teams.length;
   const order = teams.slice(si).concat(teams.slice(0, si));
@@ -726,11 +740,11 @@ function dealGame(cfg, seq, rot) {
   }
   let wi = 0;
   for (let i = 0; i < L.size; i++) if (board[i] === null) board[i] = words[wi++];
-  return { seq, mode: cfg.mode, cols: L.cols, size: L.size, assassins: L.assassins, words: board, colors, teams, order,
+  return { seq, mode: cfg.mode, big: !!cfg.big, cols: L.cols, size: L.size, assassins: L.assassins, words: board, colors, teams, order,
     turn: order[0], revealed: Array(L.size).fill(false), out: {}, winner: null, reason: "", history: [], last: null,
     vedant, powers: {}, skip: {}, spin: null, dare: null };
 }
-const vedantDecoys = L => (L.cols === 5 ? 2 : 3);
+const vedantDecoys = L => Math.round(L.size / 12);
 
 // ---------- shared room data (Firebase drops empty values and may return arrays as objects) ----------
 function toArr(x, n, fill) {
@@ -746,7 +760,7 @@ function normRoom(r) {
   const words = toArr(g.words);
   const size = g.size || words.length;
   const game = {
-    seq: g.seq || 1, mode: ["spicy", "vedant"].includes(g.mode) ? g.mode : "general", cols: g.cols || 5, size, assassins: g.assassins || 0,
+    seq: g.seq || 1, mode: ["spicy", "vedant"].includes(g.mode) ? g.mode : "general", cols: g.cols || 5, size, big: !!g.big, assassins: g.assassins || 0,
     words: toArr(g.words, size, ""), colors: toArr(g.colors, size, "neutral"), teams: toArr(g.teams), order: toArr(g.order),
     turn: g.turn || "red", revealed: toArr(g.revealed, size, false), out: g.out || {}, winner: g.winner || null, reason: g.reason || "",
     history: toArr(g.history).filter(Boolean).map(h => ({ turn: h.turn, revealed: toArr(h.revealed, size, false), out: h.out || {}, winner: h.winner || null, reason: h.reason || "",
@@ -1019,6 +1033,7 @@ function showLobby() {
   $("overlay").hidden = true;
   $("lobby").hidden = false; $("roomUI").hidden = true; $("roomForm").hidden = true;
   applyModeLook(localPrefs.mode);
+  document.body.classList.remove("bigboard");
   $("stripe").style.background = "var(--accent)";
   document.querySelectorAll("#lobbyMode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === localPrefs.mode)));
   document.title = "Codenames";
@@ -1252,7 +1267,9 @@ function render() {
   const g = R.game, board = $("board");
   applyModeLook(g.mode);
   board.classList.toggle("spy", spy);
-  board.classList.toggle("wide", g.cols === 6);
+  board.classList.toggle("wide", g.cols >= 6);
+  board.classList.toggle("xwide", g.cols >= 7);
+  document.body.classList.toggle("bigboard", !!g.big);
   board.style.gridTemplateColumns = "repeat(" + g.cols + ", minmax(0, 1fr))";
   if (board.children.length !== g.size || !board.firstElementChild.classList.contains("card")) {
     board.innerHTML = "";
@@ -1341,13 +1358,16 @@ function fitAll() {
     const w = b.clientWidth, h = b.clientHeight;
     const base = Math.max(9, Math.min(24, w / 6.2));
     let size = base, guard = 0;
-    s.classList.remove("two");
+    s.classList.remove("two", "brk");
     s.style.fontSize = size + "px";
     const multi = s.textContent.indexOf(" ") > -1;
-    while (guard++ < 80 && (s.scrollWidth > w - 8 || s.scrollHeight > h - 6) && size > 7) {
+    const minSize = w < 52 ? 5.5 : 7;
+    while (guard++ < 100 && (s.scrollWidth > w - 6 || s.scrollHeight > h - 6) && size > minSize) {
       if (multi && !s.classList.contains("two") && size < base * .85) { s.classList.add("two"); continue; }
       size -= .5; s.style.fontSize = size + "px";
     }
+    // last resort for one very long word on a tiny card: let it wrap mid-word
+    if (s.scrollWidth > w - 4) s.classList.add("two", "brk");
   }
 }
 
@@ -1359,9 +1379,10 @@ function renderSetup() {
   $("assOut").textContent = d.assassins;
   $("assMinus").disabled = d.assassins <= 0;
   $("assPlus").disabled = d.assassins >= MAX_ASSASSINS;
+  document.querySelectorAll("#sizeSeg button").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.big === "1") === d.big)));
   $("mixField").hidden = !spicyMode;
   $("spicyOpts").hidden = R.game.mode !== "spicy";
-  const L = layoutFor(d.teams, d.assassins);
+  const L = layoutFor(d.teams, d.assassins, d.big);
   $("layoutLine").textContent = L.cols + "×" + L.rows + " board (" + L.size + " words). Starting team gets " + L.start + ", " + (d.teams === 2 ? "the other team gets " : "each other team gets ") + L.other + ". " +
     L.assassins + " black tile" + (L.assassins === 1 ? "" : "s") + ", " + L.neutral + " bystanders." +
     (d.teams > 2 ? " Hitting a black tile knocks that team out." : " Hitting a black tile loses the game.") +
@@ -1425,6 +1446,7 @@ document.querySelectorAll("#teamsSeg button").forEach(b => b.addEventListener("c
 }));
 $("assMinus").addEventListener("click", () => { if (draft && draft.assassins > 0) { draft.assassins--; editDraft(); } });
 $("assPlus").addEventListener("click", () => { if (draft && draft.assassins < MAX_ASSASSINS) { draft.assassins++; editDraft(); } });
+document.querySelectorAll("#sizeSeg button").forEach(b => b.addEventListener("click", () => { if (draft) { draft.big = b.dataset.big === "1"; editDraft(); } }));
 $("mix").addEventListener("change", e => { if (draft) { draft.mix = Number(e.target.value); editDraft(); } });
 $("deal").addEventListener("click", dealWithDraft);
 $("spinBtn").addEventListener("click", spinWheel);
